@@ -1,0 +1,135 @@
+version: "3.9"
+
+# ==========================================================
+# CivicVision AI — docker-compose
+#
+# Quick start:
+#   cp .env.example .env   # then fill in real secrets
+#   docker compose up --build
+#
+# Service URLs (from your host machine / browser):
+#   Frontend:    http://localhost:5173
+#   Backend API: http://localhost:5000/api/v1/health
+#   AI Service:  http://localhost:8000/health
+#
+# Note on networking: services reach each other using Docker's internal
+# service-name DNS (e.g. the backend's DATABASE_URL points at `postgres`,
+# not `localhost`). The frontend's VITE_API_BASE_URL, by contrast, is
+# baked into the static JS bundle at build time and must point at
+# `localhost` + the host-mapped port, since that code runs in the
+# user's browser — outside the Docker network entirely.
+# ==========================================================
+
+networks:
+  civicvision-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
+    driver: local
+  redis-data:
+    driver: local
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-civicvision}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme_in_production}
+      POSTGRES_DB: ${POSTGRES_DB:-civicvision_db}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-civicvision} -d ${POSTGRES_DB:-civicvision_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - civicvision-network
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - civicvision-network
+
+  backend:
+    build:
+      context: .
+      dockerfile: infra/docker/backend.Dockerfile
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      HOST: 0.0.0.0
+      API_VERSION: v1
+      APP_NAME: ${APP_NAME:-CivicVision AI}
+      APP_VERSION: ${APP_VERSION:-1.0.0}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-civicvision}:${POSTGRES_PASSWORD:-changeme_in_production}@postgres:5432/${POSTGRES_DB:-civicvision_db}?schema=public
+      REDIS_URL: redis://redis:6379
+      AI_SERVICE_URL: http://ai-service:8000
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-1d}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-7d}
+      BCRYPT_SALT_ROUNDS: ${BCRYPT_SALT_ROUNDS:-12}
+      ADMIN_SECRET_PASSPHRASE: ${ADMIN_SECRET_PASSPHRASE}
+    ports:
+      - "${BACKEND_PORT:-5000}:5000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - civicvision-network
+
+  frontend:
+    build:
+      context: .
+      dockerfile: infra/docker/frontend.Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:5000/api/v1}
+        VITE_AI_SERVICE_URL: ${VITE_AI_SERVICE_URL:-http://localhost:8000}
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-5173}:80"
+    depends_on:
+      - backend
+    networks:
+      - civicvision-network
+
+  ai-service:
+    build:
+      context: .
+      dockerfile: infra/docker/ai-service.Dockerfile
+    restart: unless-stopped
+    environment:
+      ENVIRONMENT: production
+      HOST: 0.0.0.0
+      PORT: 8000
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
+      MODEL_WEIGHTS_PATH: ${MODEL_WEIGHTS_PATH:-}
+      YOLO_CONFIDENCE_THRESHOLD: ${YOLO_CONFIDENCE_THRESHOLD:-0.25}
+      MLFLOW_TRACKING_URI: ${MLFLOW_TRACKING_URI:-http://localhost:5001}
+    ports:
+      - "${AI_SERVICE_PORT:-8000}:8000"
+    volumes:
+      - ./apps/ai-service/app/weights:/app/app/weights
+    networks:
+      - civicvision-network

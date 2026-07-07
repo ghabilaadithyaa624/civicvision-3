@@ -1,0 +1,36 @@
+{
+  "name": "civicvision-ai",
+  "version": "1.0.0",
+  "private": true,
+  "description": "CivicVision AI - Enterprise AI-powered civic infrastructure platform",
+  "engines": {
+    "node": ">=22.0.0",
+    "npm": ">=10.0.0"
+  },
+  "workspaces": [
+    "apps/frontend",
+    "apps/backend",
+    "packages/shared-ui",
+    "packages/shared-types",
+    "packages/config"
+  ],
+  "scripts": {
+    "dev:backend": "npm run dev --workspace=apps/backend",
+    "dev:frontend": "npm run dev --workspace=apps/frontend",
+    "build:backend": "npm run build --workspace=apps/backend",
+    "build:frontend": "npm run build --workspace=apps/frontend",
+    "lint": "npm run lint --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "docker:up": "docker compose up --build",
+    "docker:down": "docker compose down",
+    "prepare": "node -e \"try { require('fs').existsSync('.git') && require('child_process').execSync('husky install') } catch (e) {}\""
+  },
+  "devDependencies": {
+    "husky": "^9.0.11",
+    "lint-staged": "^15.2.7",
+    "prettier": "^3.3.2",
+    "typescript": "^5.5.3"
+  },
+  "author": "CivicVision AI Team",
+  "license": "UNLICENSED"
+}

@@ -1,0 +1,8 @@
+{
+  "name": "@civicvision/shared-types",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Shared TypeScript type definitions for the CivicVision AI API contract (used with `import type` — no runtime code, no build step required).",
+  "types": "src/index.ts",
+  "main": "src/index.ts"
+}

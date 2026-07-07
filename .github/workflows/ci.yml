@@ -1,0 +1,111 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend (lint, typecheck, test)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      # Installed at the repo root, not apps/backend — this is an npm
+      # workspaces monorepo, so the lockfile and node_modules live at
+      # the root. --workspace flags below scope individual commands.
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint --workspace=apps/backend
+
+      - name: Typecheck
+        run: npm run typecheck --workspace=apps/backend
+
+      # No live Postgres/Redis service containers needed here: the
+      # health readiness test asserts graceful degradation when the DB
+      # is unreachable, and AuthService is unit-tested against an
+      # in-memory fake repository (see tests/auth.service.test.ts) —
+      # a deliberate byproduct of the lazy-loading design in Module 3.
+      - name: Test
+        run: npm run test --workspace=apps/backend
+
+  frontend:
+    name: Frontend (lint, typecheck, build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint --workspace=apps/frontend
+
+      - name: Typecheck
+        run: npm run typecheck --workspace=apps/frontend
+
+      # No component test suite yet (Vitest + React Testing Library is
+      # a reasonable future addition) — a successful production build
+      # is today's correctness bar, and is what's actually been
+      # verified locally throughout this project's modules.
+      - name: Build
+        run: npm run build --workspace=apps/frontend
+        env:
+          VITE_API_BASE_URL: http://localhost:5000/api/v1
+          VITE_AI_SERVICE_URL: http://localhost:8000
+
+  ai-service:
+    name: AI Service (lint, typecheck, test)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/ai-service
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: apps/ai-service/requirements-dev.txt
+
+      # PyTorch's official CPU-only wheel index instead of default PyPI —
+      # the default Linux wheel bundles the full CUDA runtime (~5GB),
+      # which needlessly slows down every CI run for a service that
+      # doesn't need GPU support here. Same approach used in
+      # infra/docker/ai-service.Dockerfile, for the same reason.
+      - name: Install dependencies
+        run: |
+          pip install --index-url https://download.pytorch.org/whl/cpu \
+            --extra-index-url https://pypi.org/simple \
+            -r requirements-dev.txt
+
+      - name: Lint (ruff)
+        run: ruff check .
+
+      - name: Format check (black)
+        run: black --check .
+
+      - name: Typecheck (mypy)
+        run: mypy app/ main.py
+
+      - name: Test
+        run: pytest app/tests/ -v

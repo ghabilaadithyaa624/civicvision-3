@@ -1,0 +1,338 @@
+@import "tailwindcss";
+
+/* Tailwind v4's automatic content detection scans within this app's own
+   directory tree — it does not, by default, follow the node_modules
+   symlink out to sibling workspace packages. shared-ui's components
+   (Button, InputField, Alert) live in packages/shared-ui/src and are
+   consumed via that symlink, so their utility classes need to be
+   scanned explicitly or they'd be silently dropped from the build. */
+@source "../../../../packages/shared-ui/src";
+
+@theme {
+  --color-brand-50: #eff6ff;
+  --color-brand-100: #dbeafe;
+  --color-brand-500: #3b82f6;
+  --color-brand-600: #2563eb;
+  --color-brand-700: #1d4ed8;
+  --color-brand-900: #1e3a8a;
+
+  --font-sans:
+    "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+body {
+  @apply bg-slate-50 text-slate-900 antialiased;
+}
+
+/* Premium SaaS Custom styles */
+.premium-glass {
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.premium-glass-light {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(15, 23, 42, 0.05);
+}
+
+@keyframes laser-scan {
+  0% {
+    top: 0%;
+    opacity: 0.1;
+  }
+
+  50% {
+    top: 100%;
+    opacity: 1;
+  }
+
+  100% {
+    top: 0%;
+    opacity: 0.1;
+  }
+}
+
+.animate-laser-scan {
+  animation: laser-scan 2.5s ease-in-out infinite;
+}
+
+@keyframes floating {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+.animate-floating {
+  animation: floating 4s ease-in-out infinite;
+}
+
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 25s linear infinite;
+}
+
+@keyframes pulse-glowing {
+
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
+.animate-pulse-glowing {
+  animation: pulse-glowing 2s ease-in-out infinite;
+}
+
+/* Modern custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.2);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.4);
+}
+
+/* ============================================
+   ENHANCED TYPOGRAPHY & CONTRAST FIXES
+   ============================================ */
+
+/* Improve text hierarchy with better font weights */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  @apply font-extrabold tracking-tight;
+}
+
+/* Dark mode text improvements */
+.dark dt,
+.dark dd,
+.dark label,
+.dark span {
+  @apply text-white/95 selection:bg-brand-600 selection:text-white;
+}
+
+/* Status badges - increase contrast */
+.dark .text-amber-400 {
+  @apply text-amber-300 font-semibold;
+}
+
+.dark .text-blue-400 {
+  @apply text-blue-300 font-semibold;
+}
+
+.dark .text-emerald-400 {
+  @apply text-emerald-300 font-semibold;
+}
+
+.dark .text-rose-400 {
+  @apply text-rose-300 font-semibold;
+}
+
+/* AI Diagnosis Card text improvements */
+.ai-diagnosis-card dt {
+  @apply text-slate-300 font-semibold text-xs uppercase tracking-wide;
+}
+
+.ai-diagnosis-card dd {
+  @apply font-bold text-sm text-white;
+}
+
+/* Evidence section placeholder */
+.evidence-empty-state {
+  @apply text-slate-300 text-sm font-medium;
+}
+
+/* Metadata details - increase visual separation */
+.metadata-detail {
+  @apply border-l-2 border-brand-500/30 pl-4 py-3;
+}
+
+.metadata-detail p:first-child {
+  @apply text-slate-300 font-bold uppercase text-xs tracking-wider;
+}
+
+.metadata-detail p:not(:first-child) {
+  @apply text-white font-semibold text-xs mt-1;
+}
+
+/* Card titles - better contrast */
+.card-title {
+  @apply text-white font-extrabold text-sm tracking-tight;
+}
+
+/* Status description text */
+.status-description {
+  @apply text-slate-200 text-xs leading-relaxed;
+}
+
+/* Form inputs - better visibility */
+select,
+input[type="text"],
+input[type="email"],
+input[type="password"] {
+  @apply bg-slate-900/50 text-white border-slate-600 focus:border-brand-500 focus:ring-brand-500/30;
+}
+
+.dark select,
+.dark input[type="text"],
+.dark input[type="email"],
+.dark input[type="password"] {
+  @apply text-white/95;
+}
+
+/* Timeline step labels - increase font weight and size */
+.timeline-label {
+  @apply text-xs font-bold tracking-wider uppercase;
+}
+
+.timeline-status {
+  @apply text-[9px] font-semibold uppercase tracking-wider;
+}
+
+/* Ensure proper contrast on badge backgrounds */
+.dark .bg-amber-500\/10 {
+  @apply bg-amber-900/40;
+}
+
+.dark .bg-blue-500\/10 {
+  @apply bg-blue-900/40;
+}
+
+.dark .bg-emerald-500\/10 {
+  @apply bg-emerald-900/40;
+}
+
+.dark .bg-rose-500\/10 {
+  @apply bg-rose-900/40;
+}
+
+/* ============================================
+   ANALYTICS KPI DASHBOARD ENHANCEMENTS
+   ============================================ */
+
+/* Tabular nums for metric alignment */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Staggered card entrance animation */
+@keyframes analytics-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-up {
+  animation: analytics-fade-up 0.5s ease-out forwards;
+}
+
+/* Glow effect for chart SVG nodes */
+.chart-glow {
+  filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.35));
+}
+
+/* Animated gradient border for premium cards */
+@keyframes gradient-shift {
+
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.animate-gradient-border {
+  background-size: 200% 200%;
+  animation: gradient-shift 4s ease infinite;
+}
+
+/* Smooth progress bar fill animation */
+@keyframes bar-fill {
+  from {
+    width: 0%;
+  }
+}
+
+.animate-bar-fill {
+  animation: bar-fill 1s ease-out forwards;
+}
+
+/* ============================================
+   LEAFLET DARK THEME OVERRIDES
+   ============================================ */
+.leaflet-container {
+  background: #090d16 !important;
+  font-family: inherit;
+}
+
+.leaflet-bar {
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
+}
+
+.leaflet-bar a {
+  background-color: #0f172a !important;
+  color: #94a3b8 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+.leaflet-bar a:hover {
+  background-color: #1e293b !important;
+  color: #ffffff !important;
+}
+
+.leaflet-control-attribution {
+  background: rgba(15, 23, 42, 0.8) !important;
+  color: #64748b !important;
+}
+
+.leaflet-control-attribution a {
+  color: #38bdf8 !important;
+}

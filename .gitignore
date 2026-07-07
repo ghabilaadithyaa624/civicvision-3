@@ -1,0 +1,86 @@
+# ==========================
+# Dependencies
+# ==========================
+node_modules/
+**/node_modules/
+.pnp/
+.pnp.js
+venv/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# ==========================
+# Build outputs
+# ==========================
+dist/
+build/
+out/
+*.tsbuildinfo
+apps/backend/dist/
+apps/frontend/dist/
+apps/ai-service/**/__pycache__/
+vite.config.*.timestamp-*
+
+# ==========================
+# Environment & secrets
+# ==========================
+.env
+.env.local
+.env.*.local
+!.env.example
+*.pem
+*.key
+
+# ==========================
+# Logs
+# ==========================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ==========================
+# Testing / coverage
+# ==========================
+coverage/
+.nyc_output/
+
+# ==========================
+# Prisma
+# ==========================
+apps/backend/prisma/*.db
+
+# ==========================
+# AI Service specific
+# ==========================
+apps/ai-service/weights/*.pt
+apps/ai-service/weights/*.pth
+apps/ai-service/mlruns/
+apps/ai-service/datasets/raw/
+
+# ==========================
+# Editor / OS
+# ==========================
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# ==========================
+# Docker
+# ==========================
+docker-compose.override.yml
+
+# ==========================
+# Terraform
+# ==========================
+infra/terraform/.terraform/
+infra/terraform/*.tfstate
+infra/terraform/*.tfstate.backup
+infra/terraform/.terraform.lock.hcl

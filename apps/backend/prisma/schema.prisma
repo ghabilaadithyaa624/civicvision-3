@@ -1,0 +1,85 @@
+// CivicVision AI — Prisma schema
+// Docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==========================================================
+// Enums
+// ==========================================================
+
+enum Role {
+  CITIZEN
+  FIELD_AGENT
+  ADMIN
+}
+
+enum IssueCategory {
+  POTHOLE
+  GARBAGE
+  STREETLIGHT
+  WATER_LEAKAGE
+  DAMAGED_SIGNAGE
+  OTHER
+}
+
+enum IssueStatus {
+  PENDING
+  IN_PROGRESS
+  RESOLVED
+  REJECTED
+}
+
+// ==========================================================
+// Models
+// ==========================================================
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  fullName     String
+  role         Role     @default(CITIZEN)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  issueReports IssueReport[]
+
+  @@map("users")
+}
+
+/// A civic infrastructure issue reported by a citizen, optionally
+/// enriched by the AI service (imageUrl + aiConfidence come from the
+/// YOLOv11 detection pipeline in apps/ai-service).
+model IssueReport {
+  id           String        @id @default(uuid())
+  title        String
+  description  String?
+  category     IssueCategory
+  status       IssueStatus   @default(PENDING)
+
+  latitude     Float
+  longitude    Float
+
+  imageUrl     String?
+  aiConfidence Float?
+
+  reportedBy   User          @relation(fields: [reportedById], references: [id], onDelete: Cascade)
+  reportedById String
+
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@index([status])
+  @@index([category])
+  @@index([reportedById])
+  @@map("issue_reports")
+}

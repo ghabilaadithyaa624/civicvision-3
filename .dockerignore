@@ -1,0 +1,51 @@
+# ==========================================================
+# Keeps the Docker build context lean. All three Dockerfiles use the
+# monorepo root as their build context (required for npm workspaces),
+# so this matters a lot — without it, node_modules/.git/.venv would
+# all get sent to the Docker daemon on every build.
+# ==========================================================
+
+# Dependencies (reinstalled fresh inside each image)
+node_modules
+**/node_modules
+.venv
+**/.venv
+__pycache__
+**/__pycache__
+
+# Build outputs (rebuilt fresh inside each image)
+dist
+**/dist
+*.tsbuildinfo
+
+# Version control
+.git
+.gitignore
+
+# Environment / secrets — never bake these into an image
+.env
+.env.local
+.env.*.local
+**/.env
+
+# Logs, caches, test artifacts
+logs
+*.log
+coverage
+.pytest_cache
+.ruff_cache
+.mypy_cache
+
+# Editor / OS
+.vscode
+.idea
+.DS_Store
+
+# Docs (not needed inside containers)
+docs
+
+# Large/uncommitted ML assets — mounted as volumes instead, not baked in
+apps/ai-service/app/datasets
+apps/ai-service/app/weights/*.pt
+apps/ai-service/app/weights/*.pth
+apps/ai-service/mlruns
