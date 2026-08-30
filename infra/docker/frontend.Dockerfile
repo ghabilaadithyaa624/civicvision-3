@@ -14,7 +14,7 @@ COPY packages/config/package.json packages/config/package.json
 
 # Scoped to the frontend workspace — verified to correctly exclude the
 # backend's dependencies (Express, Prisma, bcryptjs, etc.) from this install.
-RUN npm ci --workspace=apps/frontend
+RUN npm ci --workspace=apps/frontend --ignore-scripts
 
 # ---------- Stage 2: build ----------
 FROM node:22-alpine AS builder
