@@ -5,9 +5,10 @@ import type { AppUser, TokenPair } from "@civicvision/shared-types";
 describe("auth.slice", () => {
   const mockUser: AppUser = {
     id: "user-1",
-    name: "John Doe",
+    fullName: "John Doe",
     email: "john@example.com",
-    role: "USER",
+    role: "CITIZEN",
+    isActive: true,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
