@@ -35,20 +35,34 @@ const AUDIT_FILE = path.join(LOGS_DIR, "audit.json");
  */
 export class AuditService {
   private static initialized = false;
+  private static initPromise: Promise<void> | null = null;
 
-  private static ensureInitialized() {
+  private static async ensureInitialized(): Promise<void> {
     if (this.initialized) return;
-    try {
-      if (!fs.existsSync(LOGS_DIR)) {
-        fs.mkdirSync(LOGS_DIR, { recursive: true });
-      }
-      if (!fs.existsSync(AUDIT_FILE)) {
-        fs.writeFileSync(AUDIT_FILE, JSON.stringify([]), "utf-8");
-      }
-      this.initialized = true;
-    } catch (err) {
-      logger.error({ err }, "Failed to initialize audit logs directory");
+
+    if (!this.initPromise) {
+      this.initPromise = (async () => {
+        try {
+          try {
+            await fs.promises.access(LOGS_DIR);
+          } catch {
+            await fs.promises.mkdir(LOGS_DIR, { recursive: true });
+          }
+
+          try {
+            await fs.promises.access(AUDIT_FILE);
+          } catch {
+            await fs.promises.writeFile(AUDIT_FILE, JSON.stringify([]), "utf-8");
+          }
+
+          this.initialized = true;
+        } catch (err) {
+          logger.error({ err }, "Failed to initialize audit logs directory");
+        }
+      })();
     }
+
+    return this.initPromise;
   }
 
   public static async log(
@@ -57,7 +71,7 @@ export class AuditService {
     user: string = "system",
     latency?: string
   ): Promise<void> {
-    this.ensureInitialized();
+    await this.ensureInitialized();
     try {
       const entry: AuditEntry = {
         id: "audit-" + Math.random().toString(36).substring(2, 9),
@@ -82,7 +96,7 @@ export class AuditService {
   }
 
   public static async getRecentLogs(): Promise<AuditEntry[]> {
-    this.ensureInitialized();
+    await this.ensureInitialized();
     try {
       const raw = await fs.promises.readFile(AUDIT_FILE, "utf-8");
       return JSON.parse(raw);
