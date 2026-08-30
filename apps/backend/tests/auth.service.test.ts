@@ -60,11 +60,19 @@ class FakeUserRepository implements IUserRepository {
   }
 
   async findAll(): Promise<AppUser[]> {
-    throw new Error("Method not implemented.");
+    return Array.from(this.usersByEmail.values()).map(({ passwordHash: _discard, ...appUser }) => appUser);
   }
 
-  async updateActiveStatus(_id: string, _isActive: boolean): Promise<AppUser> {
-    throw new Error("Method not implemented.");
+  async updateActiveStatus(id: string, isActive: boolean): Promise<AppUser> {
+    for (const user of this.usersByEmail.values()) {
+      if (user.id === id) {
+        user.isActive = isActive;
+        user.updatedAt = new Date();
+        const { passwordHash: _discard, ...appUser } = user;
+        return appUser;
+      }
+    }
+    throw new Error(`No user found with id ${id}`);
   }
 }
 
