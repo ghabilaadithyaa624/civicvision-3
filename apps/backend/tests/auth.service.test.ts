@@ -58,6 +58,14 @@ class FakeUserRepository implements IUserRepository {
     }
     throw new Error(`No user found with id ${id}`);
   }
+
+  async findAll(): Promise<AppUser[]> {
+    throw new Error("Method not implemented.");
+  }
+
+  async updateActiveStatus(_id: string, _isActive: boolean): Promise<AppUser> {
+    throw new Error("Method not implemented.");
+  }
 }
 
 function buildService(): { service: AuthService; repo: FakeUserRepository } {
