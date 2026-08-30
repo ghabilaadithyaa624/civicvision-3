@@ -23,7 +23,8 @@
     "test": "npm run test --workspaces --if-present",
     "docker:up": "docker compose up --build",
     "docker:down": "docker compose down",
-    "prepare": "node -e \"try { require('fs').existsSync('.git') && require('child_process').execSync('husky install') } catch (e) {}\""
+    "prepare": "node -e \"try { require('fs').existsSync('.git') && require('child_process').execSync('husky install') } catch (e) {}\"",
+    "postinstall": "npm run db:generate --workspace=apps/backend"
   },
   "devDependencies": {
     "husky": "^9.0.11",
