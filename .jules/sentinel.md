@@ -1,4 +1,4 @@
-## 2024-05-18 - Missing Authentication on Observability Endpoints
-**Vulnerability:** The `/api/v1/health/audit` endpoint was fully public, exposing structured JSON audit logs (which contain user, timestamp, and operation latency data) to anyone on the internet.
-**Learning:** Health and observability routes are sometimes grouped together. While standard health and readiness probes must be public for orchestrators (like Kubernetes), advanced observability endpoints (like audit logs, metrics, pprof data) placed in the same route file are easily left unprotected by mistake.
-**Prevention:** Always verify that endpoints within `health.routes.ts` or similar files do not leak sensitive information. Apply `authenticate` and `requireRole("ADMIN")` on a per-route basis within public routers when mixing public liveness checks with sensitive data.
+## Security Practices
+
+* **Avoid Hardcoded Secrets:** Never use fallback secrets in code for administrative functions or sensitive operations.
+* **Fail Secure:** If critical configuration (like an admin passphrase environment variable) is missing, the system should fail securely (e.g., disable the feature) rather than falling back to a default that could be exploited.

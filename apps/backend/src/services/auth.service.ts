@@ -36,7 +36,12 @@ export class AuthService {
     }
 
     if (input.role === "ADMIN") {
-      const systemAdminSecret = process.env.ADMIN_SECRET_PASSPHRASE || "CivicVision#Admin$2026!";
+      const systemAdminSecret = process.env.ADMIN_SECRET_PASSPHRASE;
+      if (!systemAdminSecret) {
+        // If the system hasn't been configured with an admin secret, disallow admin registration
+        // to prevent unauthorized admin creation.
+        throw new ForbiddenError("Admin registration is not configured");
+      }
       if (!input.adminSecret || input.adminSecret !== systemAdminSecret) {
         throw new ForbiddenError("Invalid admin secret passphrase");
       }
