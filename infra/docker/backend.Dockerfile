@@ -17,7 +17,7 @@ COPY packages/config/package.json packages/config/package.json
 
 # Scoped to the backend workspace — verified to correctly exclude the
 # frontend's dependencies (React, Vite, Tailwind, etc.) from this install.
-RUN npm ci --workspace=apps/backend --ignore-scripts
+RUN npm ci --workspace=apps/backend
 
 # ---------- Stage 2: build (Prisma client + TypeScript compile) ----------
 FROM node:22-alpine AS builder
@@ -50,7 +50,7 @@ WORKDIR /repo
 COPY package.json package-lock.json ./
 COPY apps/backend/package.json apps/backend/package.json
 COPY packages/shared-types/package.json packages/shared-types/package.json
-RUN npm ci --workspace=apps/backend --omit=dev --no-audit --no-fund --ignore-scripts && npm cache clean --force
+RUN npm ci --workspace=apps/backend --omit=dev --no-audit --no-fund && npm cache clean --force
 
 WORKDIR /repo/apps/backend
 COPY --from=builder /repo/apps/backend/dist ./dist
