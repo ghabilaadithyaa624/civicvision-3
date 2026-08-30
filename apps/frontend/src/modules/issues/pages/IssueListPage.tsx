@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useIssuesQuery } from "../hooks/useIssues.hooks";
 import { useSaaSSimulator } from "@/hooks/useSaaSSimulator";
@@ -27,10 +27,10 @@ export function IssueListPage() {
   const [categoryFilter, setCategoryFilter] = useState<IssueCategory | "">("");
   const [realtimeIssues, setRealtimeIssues] = useState<ExtendedIssueReport[]>([]);
 
-  const filters = {
+  const filters = useMemo(() => ({
     ...(statusFilter ? { status: statusFilter } : {}),
     ...(categoryFilter ? { category: categoryFilter } : {}),
-  };
+  }), [statusFilter, categoryFilter]);
 
   const { data: issues, isLoading, isError } = useIssuesQuery(filters);
 
@@ -63,7 +63,7 @@ export function IssueListPage() {
     return () => clearInterval(interval);
   }, [isRealtime]);
 
-  const getCombinedList = () => {
+  const finalIssues = useMemo(() => {
     if (saasState === "EMPTY") return [];
 
     const offlineQueue: ExtendedIssueReport[] = localStorage.getItem("offline_issues_queue")
@@ -85,9 +85,7 @@ export function IssueListPage() {
     }
 
     return [...mappedOffline, ...realtimeIssues, ...base];
-  };
-
-  const finalIssues = getCombinedList();
+  }, [saasState, issues, statusFilter, categoryFilter, realtimeIssues]);
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
