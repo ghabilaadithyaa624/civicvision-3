@@ -47,8 +47,9 @@ export function AdminLoginPage() {
         },
         {
           onSuccess: () => navigate("/admin/dashboard"),
-          onError: (err: any) => {
-            setErrorMsg(err.response?.data?.message || "Admin registration failed.");
+          onError: (err: unknown) => {
+            const error = err as { response?: { data?: { message?: string } } };
+            setErrorMsg(error.response?.data?.message || "Admin registration failed.");
           },
         }
       );

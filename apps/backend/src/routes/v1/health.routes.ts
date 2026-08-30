@@ -4,6 +4,8 @@ import { formatUptime } from "@utils/formatUptime";
 import { checkDatabaseConnection } from "@database/index";
 import { generatePrometheusMetrics } from "@middleware/metrics.middleware";
 import { AuditService } from "@services/audit.service";
+import { authenticate } from "@middleware/auth.middleware";
+import { requireRole } from "@middleware/requireRole.middleware";
 
 const router = Router();
 
@@ -77,7 +79,7 @@ router.get("/metrics", (_req, res) => {
  *
  * Exposes secure JSON structured audit logging rows for observability dashboard.
  */
-router.get("/audit", async (_req, res) => {
+router.get("/audit", authenticate, requireRole("ADMIN"), async (_req, res) => {
   const logs = await AuditService.getRecentLogs();
   res.status(200).json({
     success: true,
