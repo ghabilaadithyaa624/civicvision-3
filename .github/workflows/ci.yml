@@ -34,6 +34,9 @@ jobs:
       - name: Typecheck
         run: npm run typecheck --workspace=apps/backend
 
+      - name: Generate Prisma Client
+        run: npm run db:generate --workspace=apps/backend
+
       # No live Postgres/Redis service containers needed here: the
       # health readiness test asserts graceful degradation when the DB
       # is unreachable, and AuthService is unit-tested against an
