@@ -195,6 +195,7 @@ export function DashboardLayout() {
             </span>
           </Link>
           <button
+            aria-label="Close sidebar"
             onClick={() => setIsSidebarOpen(false)}
             className="p-1.5 rounded-lg text-slate-400 hover:text-white lg:hidden"
           >
@@ -271,6 +272,7 @@ export function DashboardLayout() {
             </div>
           </div>
           <button
+            aria-label="Sign out"
             onClick={handleLogout}
             title="Sign out"
             className="p-2 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
@@ -292,6 +294,7 @@ export function DashboardLayout() {
         >
           <div className="flex items-center gap-3">
             <button
+              aria-label="Open sidebar"
               onClick={() => setIsSidebarOpen(true)}
               className="p-2 rounded-lg text-slate-400 hover:text-white lg:hidden"
             >
@@ -333,6 +336,7 @@ export function DashboardLayout() {
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-slate-800 bg-[#0c1022]/40 text-[9px] font-mono font-bold tracking-wider">
               <span className="text-slate-400">Offline Simulation:</span>
               <button
+                aria-label="Toggle offline simulation"
                 onClick={() => setOffline(!isOffline)}
                 className={`w-8 h-4.5 rounded-full transition-colors relative cursor-pointer outline-none ${isOffline ? "bg-amber-500" : "bg-slate-800"}`}
               >
@@ -390,6 +394,7 @@ export function DashboardLayout() {
 
             {/* 🌙 Dark Mode Toggle */}
             <button
+              aria-label={isDark ? "Switch to Light Mode" : "Switch to Obsidian Dark Mode"}
               onClick={() => setIsDark(!isDark)}
               title={isDark ? "Switch to Light Mode" : "Switch to Obsidian Dark Mode"}
               className={`p-2 rounded-xl border transition-all duration-200 ${
@@ -404,6 +409,7 @@ export function DashboardLayout() {
             {/* 🔔 Notifications Bell Dropdown */}
             <div className="relative">
               <button
+                aria-label="Toggle notifications"
                 onClick={() => {
                   setIsNotifOpen(!isNotifOpen);
                   setIsLangOpen(false);
@@ -524,7 +530,7 @@ export function DashboardLayout() {
                   </span>
                 </div>
               </div>
-              <button onClick={() => setIsChatOpen(false)} className="p-1 rounded-lg text-slate-400 hover:text-white cursor-pointer transition-colors">
+              <button aria-label="Close chat" onClick={() => setIsChatOpen(false)} className="p-1 rounded-lg text-slate-400 hover:text-white cursor-pointer transition-colors">
                 <X className="h-4 w-4" />
               </button>
             </div>
@@ -624,6 +630,7 @@ export function DashboardLayout() {
                 }`}
               />
               <button
+                aria-label="Send message"
                 type="submit"
                 className="p-2 rounded-xl bg-gradient-to-r from-brand-500 to-cyan-500 hover:from-brand-650 hover:to-cyan-600 text-white shadow-md shadow-brand-500/20 cursor-pointer"
               >
@@ -635,6 +642,7 @@ export function DashboardLayout() {
 
         {/* Toggle Chat button */}
         <button
+          aria-label="Toggle AI Chatbot Support"
           onClick={() => setIsChatOpen(!isChatOpen)}
           className="pointer-events-auto cursor-pointer w-12 h-12 rounded-full bg-gradient-to-r from-brand-500 to-cyan-500 text-white flex items-center justify-center shadow-[0_4px_25px_rgba(59,130,246,0.35)] hover:scale-105 hover:shadow-[0_4px_30px_rgba(59,130,246,0.6)] hover:border-cyan-400/50 transition-all border border-brand-500/40 animate-pulse-glowing"
           title="Toggle AI Chatbot Support"
