@@ -22,8 +22,18 @@ export class IssueService {
     if (data.imageUrl) {
       try {
         const resolvedPath = this.resolveImagePath(data.imageUrl);
-        if (resolvedPath && fs.existsSync(resolvedPath)) {
-          const fileBuffer = await fs.promises.readFile(resolvedPath);
+        // ⚡ Bolt Optimization: Replace synchronous fs.existsSync with async fs.promises.readFile + catch
+        // This prevents event loop blocking on high traffic endpoints and reduces filesystem syscalls by avoiding a TOCTOU race.
+        let fileBuffer: Buffer | null = null;
+        if (resolvedPath) {
+          try {
+            fileBuffer = await fs.promises.readFile(resolvedPath);
+          } catch (e: unknown) {
+            if (e instanceof Error && (e as NodeJS.ErrnoException).code !== "ENOENT") throw e;
+          }
+        }
+
+        if (resolvedPath && fileBuffer) {
           const filename = path.basename(resolvedPath);
 
           // Build native FormData for multipart upload
