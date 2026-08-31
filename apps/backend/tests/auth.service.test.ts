@@ -114,6 +114,64 @@ describe("AuthService.register", () => {
       }),
     ).rejects.toThrow(AppError);
   });
+
+  describe("ADMIN registration", () => {
+    const originalEnv = process.env.ADMIN_SECRET_PASSPHRASE;
+
+    afterEach(() => {
+      if (originalEnv === undefined) {
+        delete process.env.ADMIN_SECRET_PASSPHRASE;
+      } else {
+        process.env.ADMIN_SECRET_PASSPHRASE = originalEnv;
+      }
+    });
+
+    it("succeeds when ADMIN_SECRET_PASSPHRASE matches input", async () => {
+      process.env.ADMIN_SECRET_PASSPHRASE = "test-secret";
+      const { service } = buildService();
+
+      const result = await service.register({
+        email: "admin@example.com",
+        password: "supersecret123",
+        fullName: "Admin User",
+        role: "ADMIN",
+        adminSecret: "test-secret",
+      });
+
+      expect(result.user.role).toBe("ADMIN");
+      expect(result.tokens.accessToken).toEqual(expect.any(String));
+    });
+
+    it("fails when input.adminSecret is incorrect", async () => {
+      process.env.ADMIN_SECRET_PASSPHRASE = "test-secret";
+      const { service } = buildService();
+
+      await expect(
+        service.register({
+          email: "admin2@example.com",
+          password: "supersecret123",
+          fullName: "Admin User",
+          role: "ADMIN",
+          adminSecret: "wrong-secret",
+        })
+      ).rejects.toThrow(AppError);
+    });
+
+    it("fails when ADMIN_SECRET_PASSPHRASE is not set in the environment", async () => {
+      delete process.env.ADMIN_SECRET_PASSPHRASE;
+      const { service } = buildService();
+
+      await expect(
+        service.register({
+          email: "admin3@example.com",
+          password: "supersecret123",
+          fullName: "Admin User",
+          role: "ADMIN",
+          adminSecret: "any-secret",
+        })
+      ).rejects.toThrow(AppError);
+    });
+  });
 });
 
 describe("AuthService.login", () => {
