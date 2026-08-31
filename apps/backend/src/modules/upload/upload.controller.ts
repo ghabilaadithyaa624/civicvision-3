@@ -9,9 +9,12 @@ import { sendSuccess } from "@utils/apiResponse";
 const UPLOADS_DIR = path.join(__dirname, "../../../public/uploads");
 
 // Ensure directory exists
-if (!fs.existsSync(UPLOADS_DIR)) {
-  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
-}
+// Performance optimization: Using asynchronous fs.promises.mkdir instead of synchronous fs.mkdirSync
+// to prevent blocking the Node.js event loop during module initialization. This reduces module load time
+// by avoiding synchronous I/O operations on the main thread.
+fs.promises.mkdir(UPLOADS_DIR, { recursive: true }).catch((err) => {
+  console.error("Failed to create uploads directory:", err);
+});
 
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => {
