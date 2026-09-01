@@ -22,7 +22,20 @@ export class IssueService {
     if (data.imageUrl) {
       try {
         const resolvedPath = this.resolveImagePath(data.imageUrl);
-        if (resolvedPath && fs.existsSync(resolvedPath)) {
+        let fileExists = false;
+
+        if (resolvedPath) {
+          try {
+            // Performance optimization: Replaced synchronous fs.existsSync with asynchronous fs.promises.access
+            // This prevents blocking the Node.js event loop during high-throughput concurrent requests
+            await fs.promises.access(resolvedPath);
+            fileExists = true;
+          } catch {
+            fileExists = false;
+          }
+        }
+
+        if (resolvedPath && fileExists) {
           const fileBuffer = await fs.promises.readFile(resolvedPath);
           const filename = path.basename(resolvedPath);
 
