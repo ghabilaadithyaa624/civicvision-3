@@ -22,7 +22,18 @@ export class IssueService {
     if (data.imageUrl) {
       try {
         const resolvedPath = this.resolveImagePath(data.imageUrl);
-        if (resolvedPath && fs.existsSync(resolvedPath)) {
+        let fileExists = false;
+        if (resolvedPath) {
+          try {
+            // ⚡ Bolt: Replaced synchronous fs.existsSync with async fs.promises.access
+            // Impact: Prevents blocking the Node.js event loop during I/O operations, improving throughput in high-concurrency environments.
+            await fs.promises.access(resolvedPath);
+            fileExists = true;
+          } catch {
+            // File does not exist
+          }
+        }
+        if (resolvedPath && fileExists) {
           const fileBuffer = await fs.promises.readFile(resolvedPath);
           const filename = path.basename(resolvedPath);
 
