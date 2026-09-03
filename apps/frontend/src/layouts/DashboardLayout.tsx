@@ -346,6 +346,9 @@ export function DashboardLayout() {
             {/* 🌐 Language Selector Dropdown */}
             <div className="relative">
               <button
+                aria-label="Select language"
+                aria-haspopup="true"
+                aria-expanded={isLangOpen}
                 onClick={() => {
                   setIsLangOpen(!isLangOpen);
                   setIsNotifOpen(false);
@@ -410,6 +413,8 @@ export function DashboardLayout() {
             <div className="relative">
               <button
                 aria-label="Toggle notifications"
+                aria-haspopup="true"
+                aria-expanded={isNotifOpen}
                 onClick={() => {
                   setIsNotifOpen(!isNotifOpen);
                   setIsLangOpen(false);
