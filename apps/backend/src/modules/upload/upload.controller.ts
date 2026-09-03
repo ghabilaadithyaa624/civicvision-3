@@ -22,7 +22,16 @@ const storage = multer.diskStorage({
   },
   filename: (_req, file, cb) => {
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    const ext = path.extname(file.originalname);
+
+    // SECURITY: Map mimetype to extension rather than trusting originalname
+    // to prevent XSS via uploading .html or other malicious extensions.
+    const extMap: Record<string, string> = {
+      "image/jpeg": ".jpg",
+      "image/png": ".png",
+      "image/webp": ".webp",
+    };
+    const ext = extMap[file.mimetype] || ".bin";
+
     cb(null, `${uniqueSuffix}${ext}`);
   },
 });
