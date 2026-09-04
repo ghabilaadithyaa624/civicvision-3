@@ -30,6 +30,7 @@ export function Button({
         className,
       )}
       disabled={disabled ?? isLoading}
+      aria-busy={isLoading}
       {...rest}
     >
       {isLoading ? "Please wait…" : children}
