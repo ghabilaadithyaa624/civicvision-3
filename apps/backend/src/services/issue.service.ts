@@ -22,10 +22,21 @@ export class IssueService {
     if (data.imageUrl) {
       try {
         const resolvedPath = this.resolveImagePath(data.imageUrl);
-        if (resolvedPath && fs.existsSync(resolvedPath)) {
-          const fileBuffer = await fs.promises.readFile(resolvedPath);
-          const filename = path.basename(resolvedPath);
+        let fileBuffer: Buffer | null = null;
+        let filename: string | null = null;
 
+        if (resolvedPath) {
+          try {
+            // Performance optimization: Prevent blocking the event loop and avoid TOCTOU anti-pattern
+            // by attempting to read the file directly instead of using fs.existsSync first.
+            fileBuffer = await fs.promises.readFile(resolvedPath);
+            filename = path.basename(resolvedPath);
+          } catch {
+            // File does not exist or cannot be read, fail gracefully
+          }
+        }
+
+        if (fileBuffer && filename) {
           // Build native FormData for multipart upload
           const formData = new FormData();
           const blob = new Blob([fileBuffer], { type: "image/jpeg" });
