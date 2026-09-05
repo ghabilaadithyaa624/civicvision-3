@@ -22,7 +22,14 @@ const storage = multer.diskStorage({
   },
   filename: (_req, file, cb) => {
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    const ext = path.extname(file.originalname);
+    // Security Fix: Do not rely on file.originalname for the extension
+    // as it can be spoofed by an attacker to execute malicious code (e.g. .html)
+    const mimeToExt: Record<string, string> = {
+      "image/jpeg": ".jpg",
+      "image/png": ".png",
+      "image/webp": ".webp",
+    };
+    const ext = mimeToExt[file.mimetype] || ".bin";
     cb(null, `${uniqueSuffix}${ext}`);
   },
 });
