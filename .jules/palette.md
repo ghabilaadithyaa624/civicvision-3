@@ -1,0 +1,1 @@
+## 2024-05-18 - InputField Accessibility\n**Learning:** In order to make error messages accessible, we need to programmatically link them with their corresponding input fields using `aria-describedby`.\n**Action:** Always associate error text with inputs using `aria-describedby` and matching IDs.

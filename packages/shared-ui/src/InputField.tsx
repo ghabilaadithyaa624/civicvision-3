@@ -24,9 +24,14 @@ export const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
             className,
           )}
           aria-invalid={Boolean(error)}
+          aria-describedby={error ? `${inputId}-error` : undefined}
           {...rest}
         />
-        {error && <p className="text-xs text-red-600">{error}</p>}
+        {error && (
+          <p id={`${inputId}-error`} className="text-xs text-red-600">
+            {error}
+          </p>
+        )}
       </div>
     );
   },
