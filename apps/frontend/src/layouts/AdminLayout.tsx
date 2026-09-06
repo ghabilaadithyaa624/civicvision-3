@@ -1,12 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
-import {
-  LayoutDashboard,
-  LogOut,
-  ShieldCheck,
-  Menu,
-  X,
-} from "lucide-react";
+import { LayoutDashboard, LogOut, ShieldCheck, Menu, X } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { logout } from "@/store/slices/auth.slice";
 
@@ -55,7 +49,10 @@ export function AdminLayout() {
       >
         {/* Sidebar Header */}
         <div className="flex items-center justify-between h-16 px-6 border-b border-slate-850">
-          <Link to="/admin/dashboard" className="flex items-center gap-2.5 font-extrabold text-lg tracking-tight">
+          <Link
+            to="/admin/dashboard"
+            className="flex items-center gap-2.5 font-extrabold text-lg tracking-tight"
+          >
             <div className="p-1.5 rounded-xl bg-gradient-to-br from-rose-600 to-amber-600 text-white shadow-md shadow-rose-500/20">
               <ShieldCheck className="h-5 w-5" />
             </div>
@@ -64,6 +61,7 @@ export function AdminLayout() {
             </span>
           </Link>
           <button
+            aria-label="Close sidebar"
             onClick={() => setIsSidebarOpen(false)}
             className="p-1.5 rounded-lg text-slate-400 hover:text-white lg:hidden"
           >
@@ -108,10 +106,13 @@ export function AdminLayout() {
             </div>
             <div className="min-w-0">
               <p className="text-xs font-bold truncate text-white">{user?.fullName || "Admin"}</p>
-              <p className="text-[10px] text-rose-450 uppercase tracking-wider font-mono">SYSADMIN</p>
+              <p className="text-[10px] text-rose-450 uppercase tracking-wider font-mono">
+                SYSADMIN
+              </p>
             </div>
           </div>
           <button
+            aria-label="Sign out"
             onClick={handleLogout}
             title="Sign out"
             className="p-2 rounded-lg text-slate-400 hover:text-rose-450 hover:bg-rose-500/10 transition-colors cursor-pointer"
@@ -127,6 +128,7 @@ export function AdminLayout() {
         <header className="h-16 border-b flex items-center justify-between px-4 sm:px-6 z-30 sticky top-0 backdrop-blur-md bg-[#070913]/75 border-slate-850">
           <div className="flex items-center gap-3">
             <button
+              aria-label="Open sidebar"
               onClick={() => setIsSidebarOpen(true)}
               className="p-2 rounded-lg text-slate-400 hover:text-white lg:hidden"
             >
