@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   useIssuesQuery,
   useUpdateIssueStatusMutation,
 } from "@/modules/issues/hooks/useIssues.hooks";
+import type { IssueReport } from "@civicvision/shared-types";
 import {
   Hammer,
   Clock,
@@ -24,27 +25,39 @@ export function FieldWorkerDashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterTab, setFilterTab] = useState<"available" | "my-tasks" | "completed">("available");
 
-  // Filter issues
-  const pendingIssues = issues?.filter((i) => i.status === "PENDING") || [];
-  const inProgressIssues = issues?.filter((i) => i.status === "IN_PROGRESS") || [];
-  const resolvedIssues = issues?.filter((i) => i.status === "RESOLVED") || [];
+  // ⚡ Bolt: Optimize issues filtering by reducing multi-pass filtering on every render
+  // and memoizing the categorized arrays so they only update when issues change.
+  // We use a single loop instead of 3 array.filter passes, lowering time complexity from O(3n) to O(n).
+  const { pendingIssues, inProgressIssues, resolvedIssues } = useMemo(() => {
+    if (!issues) return { pendingIssues: [], inProgressIssues: [], resolvedIssues: [] };
+    const pending: IssueReport[] = [];
+    const inProgress: IssueReport[] = [];
+    const resolved: IssueReport[] = [];
 
-  // Filter based on active tab
-  let displayedIssues = [];
-  if (filterTab === "available") {
-    displayedIssues = pendingIssues;
-  } else if (filterTab === "my-tasks") {
-    displayedIssues = inProgressIssues;
-  } else {
-    displayedIssues = resolvedIssues;
-  }
+    for (const issue of issues) {
+      if (issue.status === "PENDING") pending.push(issue);
+      else if (issue.status === "IN_PROGRESS") inProgress.push(issue);
+      else if (issue.status === "RESOLVED") resolved.push(issue);
+    }
+    return { pendingIssues: pending, inProgressIssues: inProgress, resolvedIssues: resolved };
+  }, [issues]);
 
-  // Search filter
-  displayedIssues = displayedIssues.filter(
-    (i) =>
-      i.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      i.category.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // ⚡ Bolt: Memoize the final displayed issues combining tab selection and search.
+  // We also hoist the toLowerCase() call outside the loop to avoid redundant string allocations per item.
+  const displayedIssues = useMemo(() => {
+    let baseList = pendingIssues;
+    if (filterTab === "my-tasks") baseList = inProgressIssues;
+    else if (filterTab === "completed") baseList = resolvedIssues;
+
+    if (!searchQuery) return baseList;
+
+    const lowerQuery = searchQuery.toLowerCase();
+    return baseList.filter(
+      (i) =>
+        i.title.toLowerCase().includes(lowerQuery) ||
+        i.category.toLowerCase().includes(lowerQuery)
+    );
+  }, [pendingIssues, inProgressIssues, resolvedIssues, filterTab, searchQuery]);
 
   const handlePickUpTask = (issueId: string) => {
     updateStatusMutation.mutate({ id: issueId, status: "IN_PROGRESS" });
