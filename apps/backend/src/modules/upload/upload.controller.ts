@@ -22,8 +22,18 @@ const storage = multer.diskStorage({
   },
   filename: (_req, file, cb) => {
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    const ext = path.extname(file.originalname);
-    cb(null, `${uniqueSuffix}${ext}`);
+
+    // Map mime types to safe extensions to prevent spoofing
+    const mimeToExt: Record<string, string> = {
+      "image/jpeg": ".jpg",
+      "image/png": ".png",
+      "image/webp": ".webp",
+    };
+
+    // Fallback to empty string if somehow an invalid mime bypasses filter
+    const safeExt = mimeToExt[file.mimetype] || "";
+
+    cb(null, `${uniqueSuffix}${safeExt}`);
   },
 });
 
