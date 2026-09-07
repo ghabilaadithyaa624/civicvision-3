@@ -22,8 +22,21 @@ export class IssueService {
     if (data.imageUrl) {
       try {
         const resolvedPath = this.resolveImagePath(data.imageUrl);
-        if (resolvedPath && fs.existsSync(resolvedPath)) {
-          const fileBuffer = await fs.promises.readFile(resolvedPath);
+        let fileBuffer: Buffer | null = null;
+        if (resolvedPath) {
+          // Performance optimization: Optimistic asynchronous file read prevents blocking
+          // the event loop and avoids Time-of-Check to Time-of-Use (TOCTOU) race conditions
+          // that can occur with fs.existsSync.
+          try {
+            fileBuffer = await fs.promises.readFile(resolvedPath);
+          } catch {
+            logger.warn(`Image file does not exist or is unreadable at resolved path: ${resolvedPath}`);
+          }
+        } else {
+          logger.warn(`Image file does not exist at resolved path: ${resolvedPath}`);
+        }
+
+        if (resolvedPath && fileBuffer) {
           const filename = path.basename(resolvedPath);
 
           // Build native FormData for multipart upload
@@ -67,8 +80,6 @@ export class IssueService {
           } else {
             logger.warn(`AI service returned status ${aiResponse.status}`);
           }
-        } else {
-          logger.warn(`Image file does not exist at resolved path: ${resolvedPath}`);
         }
       } catch (err) {
         // Graceful degradation: log error but proceed to create the issue
