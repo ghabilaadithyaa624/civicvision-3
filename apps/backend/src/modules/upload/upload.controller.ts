@@ -16,13 +16,21 @@ fs.promises.mkdir(UPLOADS_DIR, { recursive: true }).catch((err) => {
   console.error("Failed to create uploads directory:", err);
 });
 
+const mimeToExt: Record<string, string> = {
+  "image/jpeg": ".jpg",
+  "image/png": ".png",
+  "image/webp": ".webp",
+};
+
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => {
     cb(null, UPLOADS_DIR);
   },
   filename: (_req, file, cb) => {
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    const ext = path.extname(file.originalname);
+    // Security Fix: Do not rely on originalname to determine extension.
+    // Instead map validated mimetype to a hardcoded safe extension to prevent Stored XSS and extension spoofing.
+    const ext = mimeToExt[file.mimetype] || ".bin";
     cb(null, `${uniqueSuffix}${ext}`);
   },
 });
