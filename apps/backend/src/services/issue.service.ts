@@ -22,8 +22,19 @@ export class IssueService {
     if (data.imageUrl) {
       try {
         const resolvedPath = this.resolveImagePath(data.imageUrl);
-        if (resolvedPath && fs.existsSync(resolvedPath)) {
-          const fileBuffer = await fs.promises.readFile(resolvedPath);
+        let fileBuffer;
+
+        if (resolvedPath) {
+          try {
+            // Performance optimization: Avoid synchronous fs.existsSync (blocks event loop).
+            // Expected impact: Eliminates main thread blocking I/O, preventing TOCTOU.
+            fileBuffer = await fs.promises.readFile(resolvedPath);
+          } catch {
+            // File not found or read error; handled by the else block below
+          }
+        }
+
+        if (resolvedPath && fileBuffer) {
           const filename = path.basename(resolvedPath);
 
           // Build native FormData for multipart upload
