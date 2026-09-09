@@ -64,6 +64,7 @@ export function AdminLayout() {
             </span>
           </Link>
           <button
+            aria-label="Close sidebar"
             onClick={() => setIsSidebarOpen(false)}
             className="p-1.5 rounded-lg text-slate-400 hover:text-white lg:hidden"
           >
@@ -112,6 +113,7 @@ export function AdminLayout() {
             </div>
           </div>
           <button
+            aria-label="Sign out"
             onClick={handleLogout}
             title="Sign out"
             className="p-2 rounded-lg text-slate-400 hover:text-rose-450 hover:bg-rose-500/10 transition-colors cursor-pointer"
@@ -127,6 +129,7 @@ export function AdminLayout() {
         <header className="h-16 border-b flex items-center justify-between px-4 sm:px-6 z-30 sticky top-0 backdrop-blur-md bg-[#070913]/75 border-slate-850">
           <div className="flex items-center gap-3">
             <button
+              aria-label="Open sidebar"
               onClick={() => setIsSidebarOpen(true)}
               className="p-2 rounded-lg text-slate-400 hover:text-white lg:hidden"
             >
