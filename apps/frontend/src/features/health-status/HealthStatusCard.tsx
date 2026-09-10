@@ -6,11 +6,11 @@ export function HealthStatusCard() {
   const { data, isLoading, isError } = useHealthStatus();
 
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+    <div aria-busy={isLoading} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
       <ServerCog className="h-5 w-5 text-slate-400" />
       <div className="flex-1">
         <p className="text-sm font-medium text-slate-900">Backend API</p>
-        <p className="text-xs text-slate-500">
+        <p aria-live="polite" className="text-xs text-slate-500">
           {isLoading && "Checking status…"}
           {isError && "Unable to reach the backend"}
           {data && `${data.message} · v${data.version} · uptime ${data.uptime}`}
