@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useMemo } from "react";
 import { LayoutDashboard, Plus, List, TrendingUp, Compass, Sparkles, Camera } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAppSelector } from "@/store/hooks";
@@ -27,12 +27,29 @@ export function DashboardPage() {
     isCitizen && user ? { reportedById: user.id } : undefined
   );
 
-  const totalCount = issues?.length ?? 0;
-  const pendingCount = issues?.filter((i) => i.status === "PENDING").length ?? 0;
-  const progressCount = issues?.filter((i) => i.status === "IN_PROGRESS").length ?? 0;
-  const resolvedCount = issues?.filter((i) => i.status === "RESOLVED").length ?? 0;
+  // ⚡ Bolt: Replaced O(3N) multiple .filter loops with an O(N) single-pass useMemo.
+  // Reduces unnecessary re-calculations of counts and arrays on every render.
+  const { totalCount, pendingCount, progressCount, resolvedCount, recentIssues } = useMemo(() => {
+    if (!issues) return { totalCount: 0, pendingCount: 0, progressCount: 0, resolvedCount: 0, recentIssues: [] };
 
-  const recentIssues = issues?.slice(0, 3) ?? [];
+    let pending = 0;
+    let progress = 0;
+    let resolved = 0;
+
+    for (const issue of issues) {
+      if (issue.status === "PENDING") pending++;
+      else if (issue.status === "IN_PROGRESS") progress++;
+      else if (issue.status === "RESOLVED") resolved++;
+    }
+
+    return {
+      totalCount: issues.length,
+      pendingCount: pending,
+      progressCount: progress,
+      resolvedCount: resolved,
+      recentIssues: issues.slice(0, 3)
+    };
+  }, [issues]);
 
   // Canvas radar scanner ref
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
