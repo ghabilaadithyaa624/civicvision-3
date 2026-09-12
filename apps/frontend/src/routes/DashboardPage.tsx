@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useMemo } from "react";
 import { LayoutDashboard, Plus, List, TrendingUp, Compass, Sparkles, Camera } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAppSelector } from "@/store/hooks";
@@ -27,10 +27,22 @@ export function DashboardPage() {
     isCitizen && user ? { reportedById: user.id } : undefined
   );
 
-  const totalCount = issues?.length ?? 0;
-  const pendingCount = issues?.filter((i) => i.status === "PENDING").length ?? 0;
-  const progressCount = issues?.filter((i) => i.status === "IN_PROGRESS").length ?? 0;
-  const resolvedCount = issues?.filter((i) => i.status === "RESOLVED").length ?? 0;
+  // ⚡ Bolt Performance Optimization: Replace 3 unmemoized O(N) array filter iterations with a single-pass O(N) loop memoized to prevent recalculation on every re-render. Expected impact: Reduced CPU usage during re-renders, especially with large issue lists.
+  const { totalCount, pendingCount, progressCount, resolvedCount } = useMemo(() => {
+    let pending = 0;
+    let progress = 0;
+    let resolved = 0;
+    if (!issues) return { totalCount: 0, pendingCount: 0, progressCount: 0, resolvedCount: 0 };
+
+    for (let i = 0; i < issues.length; i++) {
+      const status = issues[i].status;
+      if (status === "PENDING") pending++;
+      else if (status === "IN_PROGRESS") progress++;
+      else if (status === "RESOLVED") resolved++;
+    }
+
+    return { totalCount: issues.length, pendingCount: pending, progressCount: progress, resolvedCount: resolved };
+  }, [issues]);
 
   const recentIssues = issues?.slice(0, 3) ?? [];
 
