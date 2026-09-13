@@ -1,0 +1,3 @@
+## 2024-05-18 - Form Input Error Accessibility
+**Learning:** For form accessibility, ensure inputs with dynamic error messages use the `aria-describedby` attribute to explicitly link the input field to the corresponding error text element's ID. This guarantees screen readers announce the validation context correctly.
+**Action:** Always add `aria-describedby={error ? `${inputId}-error` : undefined}` to the `<input>` and an ID matching `${inputId}-error` to the error message text wrapper when building form components.
