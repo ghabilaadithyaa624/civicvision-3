@@ -49,7 +49,7 @@ export class IssueService {
             if (result.success && result.detections && result.detections.length > 0) {
               // Find the detection with the highest confidence
               const bestDetection = result.detections.reduce((best, current) =>
-                current.confidence > best.confidence ? current : best
+                current.confidence > best.confidence ? current : best,
               );
 
               // Map label to IssueCategory
@@ -58,7 +58,7 @@ export class IssueService {
                 aiCategory = mappedCategory;
                 aiConfidence = bestDetection.confidence;
                 logger.info(
-                  `AI detection succeeded: mapped to ${aiCategory} with confidence ${aiConfidence}`
+                  `AI detection succeeded: mapped to ${aiCategory} with confidence ${aiConfidence}`,
                 );
               }
             } else {
@@ -114,12 +114,18 @@ export class IssueService {
   private resolveImagePath(imageUrl: string): string | null {
     // If it's a relative uploads path e.g. /uploads/abc.jpg
     if (imageUrl.startsWith("/uploads/")) {
-      return path.join(__dirname, "../../../public", imageUrl);
+      const publicDir = path.resolve(__dirname, "../../../public");
+      const resolvedPath = path.resolve(publicDir, `.${imageUrl}`);
+
+      // Ensure the resolved path has not escaped the intended base directory
+      if (!resolvedPath.startsWith(publicDir + path.sep)) {
+        logger.warn(`Path traversal attempt detected with imageUrl: ${imageUrl}`);
+        return null;
+      }
+      return resolvedPath;
     }
-    // If it's an absolute path
-    if (path.isAbsolute(imageUrl)) {
-      return imageUrl;
-    }
+
+    // Explicitly reject absolute paths to prevent LFI
     return null;
   }
 
