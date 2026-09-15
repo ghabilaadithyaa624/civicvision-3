@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useMemo } from "react";
 import { LayoutDashboard, Plus, List, TrendingUp, Compass, Sparkles, Camera } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAppSelector } from "@/store/hooks";
@@ -28,9 +28,23 @@ export function DashboardPage() {
   );
 
   const totalCount = issues?.length ?? 0;
-  const pendingCount = issues?.filter((i) => i.status === "PENDING").length ?? 0;
-  const progressCount = issues?.filter((i) => i.status === "IN_PROGRESS").length ?? 0;
-  const resolvedCount = issues?.filter((i) => i.status === "RESOLVED").length ?? 0;
+
+  // ⚡ Bolt Performance Optimization: Replace 3 separate O(N) array .filter() passes
+  // with a single-pass loop inside a useMemo. Reduces render-blocking calculations
+  // from O(3N) to O(N) per dependency change.
+  const { pendingCount, progressCount, resolvedCount } = useMemo(() => {
+    let pending = 0;
+    let progress = 0;
+    let resolved = 0;
+    if (issues) {
+      for (const i of issues) {
+        if (i.status === "PENDING") pending++;
+        else if (i.status === "IN_PROGRESS") progress++;
+        else if (i.status === "RESOLVED") resolved++;
+      }
+    }
+    return { pendingCount: pending, progressCount: progress, resolvedCount: resolved };
+  }, [issues]);
 
   const recentIssues = issues?.slice(0, 3) ?? [];
 
