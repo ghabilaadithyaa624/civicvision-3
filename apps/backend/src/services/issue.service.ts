@@ -22,7 +22,8 @@ export class IssueService {
     if (data.imageUrl) {
       try {
         const resolvedPath = this.resolveImagePath(data.imageUrl);
-        if (resolvedPath && fs.existsSync(resolvedPath)) {
+        if (resolvedPath) {
+          // Use optimistic async readFile instead of synchronous existsSync to prevent TOCTOU and event loop blocking
           const fileBuffer = await fs.promises.readFile(resolvedPath);
           const filename = path.basename(resolvedPath);
 
@@ -49,7 +50,7 @@ export class IssueService {
             if (result.success && result.detections && result.detections.length > 0) {
               // Find the detection with the highest confidence
               const bestDetection = result.detections.reduce((best, current) =>
-                current.confidence > best.confidence ? current : best
+                current.confidence > best.confidence ? current : best,
               );
 
               // Map label to IssueCategory
@@ -58,7 +59,7 @@ export class IssueService {
                 aiCategory = mappedCategory;
                 aiConfidence = bestDetection.confidence;
                 logger.info(
-                  `AI detection succeeded: mapped to ${aiCategory} with confidence ${aiConfidence}`
+                  `AI detection succeeded: mapped to ${aiCategory} with confidence ${aiConfidence}`,
                 );
               }
             } else {
@@ -68,7 +69,7 @@ export class IssueService {
             logger.warn(`AI service returned status ${aiResponse.status}`);
           }
         } else {
-          logger.warn(`Image file does not exist at resolved path: ${resolvedPath}`);
+          logger.warn(`Invalid or unresolved image path for AI detection: ${data.imageUrl}`);
         }
       } catch (err) {
         // Graceful degradation: log error but proceed to create the issue
@@ -112,15 +113,20 @@ export class IssueService {
   }
 
   private resolveImagePath(imageUrl: string): string | null {
-    // If it's a relative uploads path e.g. /uploads/abc.jpg
-    if (imageUrl.startsWith("/uploads/")) {
-      return path.join(__dirname, "../../../public", imageUrl);
+    // Only allow /uploads/ prefix to prevent SSRF and arbitrary path evaluation
+    if (!imageUrl.startsWith("/uploads/")) {
+      return null;
     }
-    // If it's an absolute path
-    if (path.isAbsolute(imageUrl)) {
-      return imageUrl;
+    const baseDir = path.resolve(__dirname, "../../../public");
+    // Prepend '.' if absolute to ensure path.resolve resolves relative to baseDir, not system root
+    const safeInput = imageUrl.startsWith("/") ? "." + imageUrl : imageUrl;
+    const resolvedPath = path.resolve(baseDir, safeInput);
+
+    // Strict boundary check to prevent Path Traversal
+    if (!resolvedPath.startsWith(baseDir + path.sep)) {
+      return null;
     }
-    return null;
+    return resolvedPath;
   }
 
   private mapLabelToCategory(label: string): IssueCategory | null {
