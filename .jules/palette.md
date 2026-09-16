@@ -1,0 +1,3 @@
+## 2024-09-16 - Merge `aria-describedby` when linking dynamic errors
+**Learning:** When adding `aria-describedby` to shared form components (e.g. to link error messages dynamically to the input field), parent components might inadvertently override it if they pass their own `aria-describedby` via rest props.
+**Action:** Extract `aria-describedby` explicitly from component props and combine it dynamically with the error ID (e.g., `[rest['aria-describedby'], errorId].filter(Boolean).join(' ') || undefined`) so that screen readers correctly announce all descriptive text along with dynamic errors.
