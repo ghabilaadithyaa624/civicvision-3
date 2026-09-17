@@ -112,13 +112,31 @@ export class IssueService {
   }
 
   private resolveImagePath(imageUrl: string): string | null {
+    // Prevent Local File Inclusion (LFI) and Path Traversal
+    const baseDir = path.resolve(__dirname, "../../../public");
+
     // If it's a relative uploads path e.g. /uploads/abc.jpg
     if (imageUrl.startsWith("/uploads/")) {
-      return path.join(__dirname, "../../../public", imageUrl);
+      // Prepend dot if it starts with slash so path.resolve doesn't treat it as absolute root
+      const sanitizedInput = imageUrl.startsWith("/") ? "." + imageUrl : imageUrl;
+      const resolvedPath = path.resolve(baseDir, sanitizedInput);
+
+      // Strict boundary check to ensure we haven't traversed outside baseDir
+      if (!resolvedPath.startsWith(baseDir + path.sep)) {
+        return null; // Path traversal detected
+      }
+      return resolvedPath;
     }
-    // If it's an absolute path
+
+    // If it's an absolute path that is already within the public directory
     if (path.isAbsolute(imageUrl)) {
-      return imageUrl;
+      // If someone provides an absolute path directly, we still enforce it stays in our public dir.
+      // E.g. if they somehow pass /app/public/uploads/test.jpg, it's valid if it actually exists there.
+      const resolvedPath = path.resolve(imageUrl);
+      if (!resolvedPath.startsWith(baseDir + path.sep)) {
+         return null; // Do not allow arbitrary absolute paths
+      }
+      return resolvedPath;
     }
     return null;
   }
