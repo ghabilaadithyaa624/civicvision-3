@@ -9,6 +9,12 @@ interface InputFieldProps extends InputHTMLAttributes<HTMLInputElement> {
 export const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
   ({ label, error, id, className, ...rest }, ref) => {
     const inputId = id ?? label.toLowerCase().replace(/\s+/g, "-");
+    const errorId = error ? `${inputId}-error` : undefined;
+
+    // Merge any external aria-describedby with our internal error ID
+    const ariaDescribedBy =
+      [rest["aria-describedby"], errorId].filter(Boolean).join(" ") ||
+      undefined;
 
     return (
       <div className="flex flex-col gap-1.5">
@@ -24,9 +30,14 @@ export const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
             className,
           )}
           aria-invalid={Boolean(error)}
+          aria-describedby={ariaDescribedBy}
           {...rest}
         />
-        {error && <p className="text-xs text-red-600">{error}</p>}
+        {error && (
+          <p id={errorId} className="text-xs text-red-600">
+            {error}
+          </p>
+        )}
       </div>
     );
   },
