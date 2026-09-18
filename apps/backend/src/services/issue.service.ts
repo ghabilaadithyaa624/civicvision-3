@@ -114,13 +114,18 @@ export class IssueService {
   private resolveImagePath(imageUrl: string): string | null {
     // If it's a relative uploads path e.g. /uploads/abc.jpg
     if (imageUrl.startsWith("/uploads/")) {
-      return path.join(__dirname, "../../../public", imageUrl);
+      const baseDir = path.resolve(__dirname, "../../../public");
+      const normalizedInput = imageUrl.startsWith("/") ? "." + imageUrl : imageUrl;
+      const resolvedPath = path.resolve(baseDir, normalizedInput);
+
+      // Prevent path traversal by strictly verifying the resolved path stays within baseDir
+      if (!resolvedPath.startsWith(baseDir + path.sep)) {
+        logger.warn(`Path traversal attempt detected with input: ${imageUrl}`);
+        return null;
+      }
+      return resolvedPath;
     }
-    // If it's an absolute path
-    if (path.isAbsolute(imageUrl)) {
-      return imageUrl;
-    }
-    return null;
+    return null; // Deny arbitrary absolute paths to prevent Local File Inclusion (LFI)
   }
 
   private mapLabelToCategory(label: string): IssueCategory | null {
