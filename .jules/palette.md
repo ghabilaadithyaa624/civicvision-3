@@ -1,0 +1,3 @@
+## 2026-09-19 - ARIA-describedby Merging Pattern
+**Learning:** Shared UI components (like `InputField.tsx`) can receive internal ARIA bindings (e.g., `aria-describedby` for validation errors) while also needing to support external ARIA properties passed via rest props. If not merged properly, the external ones can override the internal ones, breaking accessibility.
+**Action:** When applying internal ARIA properties in shared components, explicitly merge them with the corresponding property from `rest` using an array filter and join pattern (e.g., `[rest['aria-describedby'], errorId].filter(Boolean).join(' ') || undefined`) to ensure both are preserved.
