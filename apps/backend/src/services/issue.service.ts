@@ -112,14 +112,18 @@ export class IssueService {
   }
 
   private resolveImagePath(imageUrl: string): string | null {
-    // If it's a relative uploads path e.g. /uploads/abc.jpg
-    if (imageUrl.startsWith("/uploads/")) {
-      return path.join(__dirname, "../../../public", imageUrl);
+    const baseDir = path.resolve(__dirname, "../../../public");
+
+    // Prevent path.resolve from treating leading slash as an absolute path
+    // which would bypass the base directory constraint.
+    const safeInput = imageUrl.startsWith("/") ? "." + imageUrl : imageUrl;
+    const resolvedPath = path.resolve(baseDir, safeInput);
+
+    // Strictly enforce the directory boundary to prevent path traversal
+    if (resolvedPath.startsWith(baseDir + path.sep)) {
+      return resolvedPath;
     }
-    // If it's an absolute path
-    if (path.isAbsolute(imageUrl)) {
-      return imageUrl;
-    }
+
     return null;
   }
 
