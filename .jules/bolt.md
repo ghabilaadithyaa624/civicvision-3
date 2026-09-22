@@ -1,1 +1,4 @@
 - Event loop blocking from synchronous `fs` methods (like `fs.existsSync` or `fs.writeFileSync`) in Node.js backend services can be optimized by replacing them with their asynchronous equivalents (`fs.promises.access`, `fs.promises.writeFile`). In high-concurrency environments, using a shared promise (`initPromise`) is an effective pattern to prevent race conditions during asynchronous initialization without duplicating operations.
+## 2025-02-14 - React Render Array Iteration Optimization
+**Learning:** Multiple unmemoized `.filter()` calls on arrays inside React components cause an O(N * M) performance penalty on every render, especially noticeable when typing in search inputs.
+**Action:** Combine multiple array iterations into a single-pass loop wrapped in `useMemo` to ensure O(N) complexity and prevent redundant calculations during unrelated state updates.

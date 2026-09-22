@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Users,
   Shield,
@@ -29,28 +29,46 @@ export function AdminDashboardPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<"users" | "issues">("users");
 
-  // Statistics
+  // Statistics and Filtered lists
   const totalUsers = users?.length || 0;
-  const totalCitizens = users?.filter((u) => u.role === "CITIZEN").length || 0;
-  const totalAgents = users?.filter((u) => u.role === "FIELD_AGENT").length || 0;
-  const totalAdmins = users?.filter((u) => u.role === "ADMIN").length || 0;
-
   const totalIssues = issues?.length || 0;
 
-  // Filtered lists
-  const filteredUsers = users?.filter(
-    (u) =>
-      u.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      u.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      u.role.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // ⚡ Bolt: Use a single-pass loop wrapped in useMemo to compute user stats and filtered users.
+  // This reduces multiple O(N) filtering operations on every render to a single pass that only runs when dependencies change.
+  const { totalCitizens, totalAgents, totalAdmins, filteredUsers } = useMemo(() => {
+    if (!users) return { totalCitizens: 0, totalAgents: 0, totalAdmins: 0, filteredUsers: [] };
+    const query = searchQuery.toLowerCase();
 
-  const filteredIssues = issues?.filter(
-    (i) =>
-      i.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      i.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      i.status.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+    return users.reduce(
+      (acc, u) => {
+        if (u.role === "CITIZEN") acc.totalCitizens++;
+        else if (u.role === "FIELD_AGENT") acc.totalAgents++;
+        else if (u.role === "ADMIN") acc.totalAdmins++;
+
+        if (
+          u.fullName.toLowerCase().includes(query) ||
+          u.email.toLowerCase().includes(query) ||
+          u.role.toLowerCase().includes(query)
+        ) {
+          acc.filteredUsers.push(u);
+        }
+        return acc;
+      },
+      { totalCitizens: 0, totalAgents: 0, totalAdmins: 0, filteredUsers: [] as typeof users }
+    );
+  }, [users, searchQuery]);
+
+  // ⚡ Bolt: Memoize filteredIssues to prevent O(N) filtering on unrelated state updates.
+  const filteredIssues = useMemo(() => {
+    if (!issues) return [];
+    const query = searchQuery.toLowerCase();
+    return issues.filter(
+      (i) =>
+        i.title.toLowerCase().includes(query) ||
+        i.category.toLowerCase().includes(query) ||
+        i.status.toLowerCase().includes(query)
+    );
+  }, [issues, searchQuery]);
 
   const handleRoleChange = (userId: string, newRole: UserRole) => {
     updateRoleMutation.mutate({ id: userId, role: newRole });
