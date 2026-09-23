@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   useIssuesQuery,
   useUpdateIssueStatusMutation,
@@ -24,10 +24,23 @@ export function FieldWorkerDashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterTab, setFilterTab] = useState<"available" | "my-tasks" | "completed">("available");
 
-  // Filter issues
-  const pendingIssues = issues?.filter((i) => i.status === "PENDING") || [];
-  const inProgressIssues = issues?.filter((i) => i.status === "IN_PROGRESS") || [];
-  const resolvedIssues = issues?.filter((i) => i.status === "RESOLVED") || [];
+  // Filter issues using a single-pass loop wrapped in useMemo to prevent O(N) operations on every re-render
+  // Expected Impact: Reduces array traversals from 3 passes to 1, improving rendering performance on dashboard updates
+  const { pendingIssues, inProgressIssues, resolvedIssues } = useMemo(() => {
+    const pending: typeof issues = [];
+    const inProgress: typeof issues = [];
+    const resolved: typeof issues = [];
+
+    if (!issues) return { pendingIssues: [], inProgressIssues: [], resolvedIssues: [] };
+
+    for (const issue of issues) {
+      if (issue.status === "PENDING") pending!.push(issue);
+      else if (issue.status === "IN_PROGRESS") inProgress!.push(issue);
+      else if (issue.status === "RESOLVED") resolved!.push(issue);
+    }
+
+    return { pendingIssues: pending || [], inProgressIssues: inProgress || [], resolvedIssues: resolved || [] };
+  }, [issues]);
 
   // Filter based on active tab
   let displayedIssues = [];
