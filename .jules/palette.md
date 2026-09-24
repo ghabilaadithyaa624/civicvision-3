@@ -1,0 +1,3 @@
+## 2024-09-24 - Accessible Dynamic Error Messaging in Form Components
+**Learning:** When passing spread props (`...rest`) to input components in a design system, parent components can accidentally overwrite internal `aria-describedby` logic (e.g., used for linking dynamic error messages). If `...rest` contains `aria-describedby`, the internal error reference will be lost.
+**Action:** Always spread `{...rest}` before explicit component-internal ARIA bindings. Additionally, manually merge potential parent attributes (e.g., `[rest['aria-describedby'], errorId].filter(Boolean).join(' ') || undefined`) to ensure both parent-provided context and internal state logic remain announced by screen readers.
