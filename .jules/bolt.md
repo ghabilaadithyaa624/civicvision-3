@@ -1,1 +1,4 @@
 - Event loop blocking from synchronous `fs` methods (like `fs.existsSync` or `fs.writeFileSync`) in Node.js backend services can be optimized by replacing them with their asynchronous equivalents (`fs.promises.access`, `fs.promises.writeFile`). In high-concurrency environments, using a shared promise (`initPromise`) is an effective pattern to prevent race conditions during asynchronous initialization without duplicating operations.
+## 2024-11-20 - Memoizing derived status counts to prevent unneeded O(N) array traversals
+**Learning:** Found an anti-pattern in the codebase where derived state (`resolved`, `pending`, `inProgress`, `rejected`) was calculated using 4 separate unmemoized `.filter().length` calls on every render.
+**Action:** Always prefer a single-pass traversal (e.g. `reduce` or a loop) wrapped in `useMemo` when computing multiple derived aggregates from a single list in React components.
