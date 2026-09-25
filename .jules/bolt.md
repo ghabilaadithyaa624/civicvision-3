@@ -1,1 +1,5 @@
 - Event loop blocking from synchronous `fs` methods (like `fs.existsSync` or `fs.writeFileSync`) in Node.js backend services can be optimized by replacing them with their asynchronous equivalents (`fs.promises.access`, `fs.promises.writeFile`). In high-concurrency environments, using a shared promise (`initPromise`) is an effective pattern to prevent race conditions during asynchronous initialization without duplicating operations.
+
+## 2024-05-19 - Replace chained unmemoized array iterations with useMemo
+**Learning:** Performing multiple `.filter().length` operations on arrays during each render leads to unnecessary O(N) recalculations and negatively impacts frontend performance. This was evident in analytics and dashboard pages parsing large sets of records.
+**Action:** Replace multiple array iterations with a single-pass loop grouped inside a `useMemo` block. This reduces time complexity from O(M*N) to O(N) and ensures calculations are only re-run when the source array actually changes.
