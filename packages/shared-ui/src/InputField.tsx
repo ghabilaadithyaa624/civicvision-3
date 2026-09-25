@@ -10,12 +10,18 @@ export const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
   ({ label, error, id, className, ...rest }, ref) => {
     const inputId = id ?? label.toLowerCase().replace(/\s+/g, "-");
 
+    const errorId = error ? `${inputId}-error` : undefined;
+    const combinedAriaDescribedBy =
+      [rest["aria-describedby"], errorId].filter(Boolean).join(" ") ||
+      undefined;
+
     return (
       <div className="flex flex-col gap-1.5">
         <label htmlFor={inputId} className="text-sm font-medium text-slate-700">
           {label}
         </label>
         <input
+          {...rest}
           id={inputId}
           ref={ref}
           className={cn(
@@ -24,9 +30,13 @@ export const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
             className,
           )}
           aria-invalid={Boolean(error)}
-          {...rest}
+          aria-describedby={combinedAriaDescribedBy}
         />
-        {error && <p className="text-xs text-red-600">{error}</p>}
+        {error && (
+          <p id={errorId} className="text-xs text-red-600">
+            {error}
+          </p>
+        )}
       </div>
     );
   },
