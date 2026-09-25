@@ -22,7 +22,18 @@ const storage = multer.diskStorage({
   },
   filename: (_req, file, cb) => {
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    const ext = path.extname(file.originalname);
+
+    // Security Fix: Map validated mimetype to safe extension instead of trusting user input
+    // This prevents Extension Spoofing / Stored XSS where an attacker uploads
+    // a malicious payload (e.g., HTML) with a spoofed extension, which `express.static`
+    // might serve with a dangerous Content-Type.
+    const extMap: Record<string, string> = {
+      "image/jpeg": ".jpg",
+      "image/png": ".png",
+      "image/webp": ".webp",
+    };
+    const ext = extMap[file.mimetype] || ".bin";
+
     cb(null, `${uniqueSuffix}${ext}`);
   },
 });
