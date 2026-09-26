@@ -112,15 +112,27 @@ export class IssueService {
   }
 
   private resolveImagePath(imageUrl: string): string | null {
-    // If it's a relative uploads path e.g. /uploads/abc.jpg
-    if (imageUrl.startsWith("/uploads/")) {
-      return path.join(__dirname, "../../../public", imageUrl);
+    // We only process paths intended to be local uploads
+    if (!imageUrl.startsWith("/uploads/")) {
+      return null;
     }
-    // If it's an absolute path
-    if (path.isAbsolute(imageUrl)) {
-      return imageUrl;
+
+    // Determine the intended base directory for public uploads
+    const baseDir = path.resolve(__dirname, "../../../public");
+
+    // To prevent path traversal/LFI, if the input starts with a slash, prepend a dot
+    // so path.resolve doesn't treat it as an absolute path overriding the baseDir.
+    const normalizedInput = "." + imageUrl;
+
+    // Resolve the final absolute path
+    const resolvedPath = path.resolve(baseDir, normalizedInput);
+
+    // Security check: ensure the resolved path strictly resides within the base directory
+    if (!resolvedPath.startsWith(baseDir + path.sep)) {
+      return null;
     }
-    return null;
+
+    return resolvedPath;
   }
 
   private mapLabelToCategory(label: string): IssueCategory | null {
