@@ -112,15 +112,16 @@ export class IssueService {
   }
 
   private resolveImagePath(imageUrl: string): string | null {
-    // If it's a relative uploads path e.g. /uploads/abc.jpg
-    if (imageUrl.startsWith("/uploads/")) {
-      return path.join(__dirname, "../../../public", imageUrl);
+    if (!imageUrl.startsWith("/uploads/")) {
+      return null;
     }
-    // If it's an absolute path
-    if (path.isAbsolute(imageUrl)) {
-      return imageUrl;
+    const baseDir = path.resolve(__dirname, "../../../public");
+    const safeUrl = "." + imageUrl; // Prepend '.' to prevent absolute path override
+    const resolvedPath = path.resolve(baseDir, safeUrl);
+    if (!resolvedPath.startsWith(baseDir + path.sep)) {
+      return null;
     }
-    return null;
+    return resolvedPath;
   }
 
   private mapLabelToCategory(label: string): IssueCategory | null {
