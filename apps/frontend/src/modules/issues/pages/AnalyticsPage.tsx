@@ -81,10 +81,28 @@ function Sparkline({
   const fillD = `${pathD} L ${points[points.length - 1].x} ${height} L ${points[0].x} ${height} Z`;
 
   return (
-    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} className="overflow-visible">
+    <svg
+      width={width}
+      height={height}
+      viewBox={`0 0 ${width} ${height}`}
+      className="overflow-visible"
+    >
       {fillColor && <path d={fillD} fill={fillColor} opacity="0.15" />}
-      <path d={pathD} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx={points[points.length - 1].x} cy={points[points.length - 1].y} r="3" fill={color} className="animate-pulse" />
+      <path
+        d={pathD}
+        fill="none"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <circle
+        cx={points[points.length - 1].x}
+        cy={points[points.length - 1].y}
+        r="3"
+        fill={color}
+        className="animate-pulse"
+      />
     </svg>
   );
 }
@@ -149,7 +167,11 @@ function DonutChart({
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         {centerLabel && <span className="text-lg font-extrabold text-white">{centerLabel}</span>}
-        {centerSub && <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">{centerSub}</span>}
+        {centerSub && (
+          <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">
+            {centerSub}
+          </span>
+        )}
       </div>
     </div>
   );
@@ -237,8 +259,22 @@ function AreaChart({
       {/* Grid */}
       {gridLines.map((y, i) => (
         <g key={i}>
-          <line x1={pad.left} y1={y} x2={pad.left + chartW} y2={y} stroke="rgba(148,163,184,0.08)" strokeWidth="1" />
-          <text x={pad.left - 8} y={y + 4} textAnchor="end" fontSize="9" fill="rgba(148,163,184,0.5)" fontFamily="monospace">
+          <line
+            x1={pad.left}
+            y1={y}
+            x2={pad.left + chartW}
+            y2={y}
+            stroke="rgba(148,163,184,0.08)"
+            strokeWidth="1"
+          />
+          <text
+            x={pad.left - 8}
+            y={y + 4}
+            textAnchor="end"
+            fontSize="9"
+            fill="rgba(148,163,184,0.5)"
+            fontFamily="monospace"
+          >
             {Math.round((1 - (y - pad.top) / chartH) * max)}
           </text>
         </g>
@@ -248,7 +284,15 @@ function AreaChart({
       <path d={areaD} fill={`url(#${gradientId})`} />
 
       {/* Line */}
-      <path d={lineD} fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ filter: `drop-shadow(0 2px 8px ${color}60)` }} />
+      <path
+        d={lineD}
+        fill="none"
+        stroke={color}
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        style={{ filter: `drop-shadow(0 2px 8px ${color}60)` }}
+      />
 
       {/* Data points */}
       {points.map((p, i) => (
@@ -262,7 +306,15 @@ function AreaChart({
       {labels.map((label, i) => {
         const x = pad.left + i * step;
         return (
-          <text key={i} x={x} y={height - 8} textAnchor="middle" fontSize="10" fill="rgba(148,163,184,0.6)" fontFamily="Inter, sans-serif">
+          <text
+            key={i}
+            x={x}
+            y={height - 8}
+            textAnchor="middle"
+            fontSize="10"
+            fill="rgba(148,163,184,0.6)"
+            fontFamily="Inter, sans-serif"
+          >
             {label}
           </text>
         );
@@ -281,16 +333,33 @@ export function AnalyticsPage() {
 
   // Derived metrics
   const total = issues?.length || 0;
-  const resolved = issues?.filter((i) => i.status === "RESOLVED").length || 0;
-  const pending = issues?.filter((i) => i.status === "PENDING").length || 0;
-  const inProgress = issues?.filter((i) => i.status === "IN_PROGRESS").length || 0;
-  const rejected = issues?.filter((i) => i.status === "REJECTED").length || 0;
+
+  // ⚡ Bolt: Replaced 4 O(N) unmemoized filter operations with a single O(N) reduce
+  // wrapped in useMemo to prevent unnecessary calculations on every re-render (e.g. when timeRange changes)
+  const statusCounts = useMemo(() => {
+    if (!issues) return { RESOLVED: 0, PENDING: 0, IN_PROGRESS: 0, REJECTED: 0 };
+    return issues.reduce(
+      (acc, issue) => {
+        acc[issue.status] = (acc[issue.status] || 0) + 1;
+        return acc;
+      },
+      { RESOLVED: 0, PENDING: 0, IN_PROGRESS: 0, REJECTED: 0 } as Record<string, number>,
+    );
+  }, [issues]);
+
+  const resolved = statusCounts.RESOLVED;
+  const pending = statusCounts.PENDING;
+  const inProgress = statusCounts.IN_PROGRESS;
+  const rejected = statusCounts.REJECTED;
   const resolutionRate = total > 0 ? Math.round((resolved / total) * 100) : 0;
   const avgAiConfidence = useMemo(() => {
     if (!issues?.length) return 96.4;
     const withConf = issues.filter((i) => i.aiConfidence !== null);
     if (!withConf.length) return 96.4;
-    return Math.round((withConf.reduce((s, i) => s + (i.aiConfidence || 0), 0) / withConf.length) * 10) / 10;
+    return (
+      Math.round((withConf.reduce((s, i) => s + (i.aiConfidence || 0), 0) / withConf.length) * 10) /
+      10
+    );
   }, [issues]);
 
   // Category breakdown
@@ -371,7 +440,12 @@ export function AnalyticsPage() {
         title: issue.title,
         status: issue.status,
         category: issue.category,
-        time: new Date(issue.updatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }),
+        time: new Date(issue.updatedAt).toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
       }));
   }, [issues]);
 
@@ -403,7 +477,8 @@ export function AnalyticsPage() {
               City Infrastructure Analytics
             </h1>
             <p className="text-sm text-slate-400 mt-2 max-w-lg leading-relaxed">
-              Real-time KPI monitoring, automated triage performance, and resolution SLA tracking powered by Antigravity 3.5 Flash High.
+              Real-time KPI monitoring, automated triage performance, and resolution SLA tracking
+              powered by Antigravity 3.5 Flash High.
             </p>
           </div>
 
@@ -414,7 +489,9 @@ export function AnalyticsPage() {
                 key={range}
                 onClick={() => setTimeRange(range)}
                 className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                  timeRange === range ? "bg-brand-500/20 text-brand-400 border border-brand-500/30" : "text-slate-400 hover:text-slate-200"
+                  timeRange === range
+                    ? "bg-brand-500/20 text-brand-400 border border-brand-500/30"
+                    : "text-slate-400 hover:text-slate-200"
                 }`}
               >
                 {range === "7d" ? "7 Days" : range === "30d" ? "30 Days" : "90 Days"}
@@ -429,27 +506,39 @@ export function AnalyticsPage() {
         {/* Total Reports */}
         <div className="group rounded-2xl border border-slate-800/60 bg-[#0f172a]/80 p-6 shadow-xl backdrop-blur-md hover:border-brand-500/30 hover:shadow-brand-500/5 transition-all duration-300">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Total Reports</span>
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+              Total Reports
+            </span>
             <div className="p-2 rounded-xl bg-brand-500/10 text-brand-400 border border-brand-500/20 group-hover:bg-brand-500/20 transition-colors">
               <Layers className="h-4.5 w-4.5" />
             </div>
           </div>
           <div className="mt-4 flex items-end justify-between">
             <div>
-              <p className="text-3xl font-extrabold text-white tabular-nums">{isLoading ? "..." : animTotal}</p>
+              <p className="text-3xl font-extrabold text-white tabular-nums">
+                {isLoading ? "..." : animTotal}
+              </p>
               <p className="text-xs text-emerald-400 flex items-center gap-1 mt-1.5 font-semibold">
                 <ArrowUpRight className="h-3.5 w-3.5" />
                 +12% from last period
               </p>
             </div>
-            <Sparkline data={sparkData.issues} color="#3b82f6" fillColor="#3b82f6" width={100} height={32} />
+            <Sparkline
+              data={sparkData.issues}
+              color="#3b82f6"
+              fillColor="#3b82f6"
+              width={100}
+              height={32}
+            />
           </div>
         </div>
 
         {/* Resolution SLA */}
         <div className="group rounded-2xl border border-slate-800/60 bg-[#0f172a]/80 p-6 shadow-xl backdrop-blur-md hover:border-emerald-500/30 hover:shadow-emerald-500/5 transition-all duration-300">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Avg. Resolution</span>
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+              Avg. Resolution
+            </span>
             <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 group-hover:bg-emerald-500/20 transition-colors">
               <Timer className="h-4.5 w-4.5" />
             </div>
@@ -464,14 +553,22 @@ export function AnalyticsPage() {
                 -32% faster vs. last month
               </p>
             </div>
-            <Sparkline data={sparkData.resolution} color="#10b981" fillColor="#10b981" width={100} height={32} />
+            <Sparkline
+              data={sparkData.resolution}
+              color="#10b981"
+              fillColor="#10b981"
+              width={100}
+              height={32}
+            />
           </div>
         </div>
 
         {/* AI Accuracy */}
         <div className="group rounded-2xl border border-slate-800/60 bg-[#0f172a]/80 p-6 shadow-xl backdrop-blur-md hover:border-cyan-500/30 hover:shadow-cyan-500/5 transition-all duration-300">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">AI Accuracy</span>
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+              AI Accuracy
+            </span>
             <div className="p-2 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 group-hover:bg-cyan-500/20 transition-colors">
               <Target className="h-4.5 w-4.5" />
             </div>
@@ -484,27 +581,43 @@ export function AnalyticsPage() {
                 Auto-triaged in &lt;100ms
               </p>
             </div>
-            <Sparkline data={sparkData.accuracy} color="#06b6d4" fillColor="#06b6d4" width={100} height={32} />
+            <Sparkline
+              data={sparkData.accuracy}
+              color="#06b6d4"
+              fillColor="#06b6d4"
+              width={100}
+              height={32}
+            />
           </div>
         </div>
 
         {/* Active Backlog */}
         <div className="group rounded-2xl border border-slate-800/60 bg-[#0f172a]/80 p-6 shadow-xl backdrop-blur-md hover:border-amber-500/30 hover:shadow-amber-500/5 transition-all duration-300">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Active Backlog</span>
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+              Active Backlog
+            </span>
             <div className="p-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20 group-hover:bg-amber-500/20 transition-colors">
               <AlertCircle className="h-4.5 w-4.5" />
             </div>
           </div>
           <div className="mt-4 flex items-end justify-between">
             <div>
-              <p className="text-3xl font-extrabold text-white tabular-nums">{isLoading ? "..." : animBacklog}</p>
+              <p className="text-3xl font-extrabold text-white tabular-nums">
+                {isLoading ? "..." : animBacklog}
+              </p>
               <p className="text-xs text-amber-400 flex items-center gap-1 mt-1.5 font-semibold">
                 <Clock className="h-3.5 w-3.5" />
                 {pending} pending · {inProgress} in-progress
               </p>
             </div>
-            <Sparkline data={sparkData.backlog} color="#f59e0b" fillColor="#f59e0b" width={100} height={32} />
+            <Sparkline
+              data={sparkData.backlog}
+              color="#f59e0b"
+              fillColor="#f59e0b"
+              width={100}
+              height={32}
+            />
           </div>
         </div>
       </div>
@@ -515,7 +628,14 @@ export function AnalyticsPage() {
         <div className="rounded-2xl border border-slate-800/60 bg-[#0f172a]/80 p-5 shadow-lg flex items-center gap-4">
           <div className="relative w-14 h-14 shrink-0">
             <svg viewBox="0 0 56 56" className="w-full h-full -rotate-90">
-              <circle cx="28" cy="28" r="22" fill="none" stroke="rgba(148,163,184,0.1)" strokeWidth="5" />
+              <circle
+                cx="28"
+                cy="28"
+                r="22"
+                fill="none"
+                stroke="rgba(148,163,184,0.1)"
+                strokeWidth="5"
+              />
               <circle
                 cx="28"
                 cy="28"
@@ -535,7 +655,9 @@ export function AnalyticsPage() {
           </div>
           <div>
             <p className="text-xs font-bold text-slate-300">Resolution Rate</p>
-            <p className="text-[10px] text-slate-500 mt-0.5">{resolved} of {total} resolved</p>
+            <p className="text-[10px] text-slate-500 mt-0.5">
+              {resolved} of {total} resolved
+            </p>
           </div>
         </div>
 
@@ -546,7 +668,9 @@ export function AnalyticsPage() {
           </div>
           <div>
             <p className="text-xs font-bold text-slate-300">Pending Triage</p>
-            <p className="text-2xl font-extrabold text-white tabular-nums">{isLoading ? "..." : pending}</p>
+            <p className="text-2xl font-extrabold text-white tabular-nums">
+              {isLoading ? "..." : pending}
+            </p>
           </div>
         </div>
 
@@ -557,7 +681,9 @@ export function AnalyticsPage() {
           </div>
           <div>
             <p className="text-xs font-bold text-slate-300">In Progress</p>
-            <p className="text-2xl font-extrabold text-white tabular-nums">{isLoading ? "..." : inProgress}</p>
+            <p className="text-2xl font-extrabold text-white tabular-nums">
+              {isLoading ? "..." : inProgress}
+            </p>
           </div>
         </div>
 
@@ -568,7 +694,9 @@ export function AnalyticsPage() {
           </div>
           <div>
             <p className="text-xs font-bold text-slate-300">Rejected / Invalid</p>
-            <p className="text-2xl font-extrabold text-white tabular-nums">{isLoading ? "..." : rejected}</p>
+            <p className="text-2xl font-extrabold text-white tabular-nums">
+              {isLoading ? "..." : rejected}
+            </p>
           </div>
         </div>
       </div>
@@ -582,7 +710,9 @@ export function AnalyticsPage() {
               <div className="p-1.5 rounded-lg bg-brand-500/10 border border-brand-500/20">
                 <LineChart className="h-4 w-4 text-brand-400" />
               </div>
-              <h2 className="text-xs font-bold uppercase tracking-wider text-white">Weekly Reports Trend</h2>
+              <h2 className="text-xs font-bold uppercase tracking-wider text-white">
+                Weekly Reports Trend
+              </h2>
             </div>
             <div className="flex items-center gap-2 text-[10px] text-slate-500">
               <span className="flex items-center gap-1">
@@ -592,7 +722,12 @@ export function AnalyticsPage() {
             </div>
           </div>
           <div className="relative aspect-[2.6/1]">
-            <AreaChart data={weeklyData} labels={weekLabels} color="#38bdf8" gradientId="weekly-trend-grad" />
+            <AreaChart
+              data={weeklyData}
+              labels={weekLabels}
+              color="#38bdf8"
+              gradientId="weekly-trend-grad"
+            />
           </div>
         </div>
 
@@ -602,12 +737,18 @@ export function AnalyticsPage() {
             <div className="p-1.5 rounded-lg bg-brand-500/10 border border-brand-500/20">
               <PieChart className="h-4 w-4 text-brand-400" />
             </div>
-            <h2 className="text-xs font-bold uppercase tracking-wider text-white">Category Breakdown</h2>
+            <h2 className="text-xs font-bold uppercase tracking-wider text-white">
+              Category Breakdown
+            </h2>
           </div>
 
           <div className="flex flex-col items-center gap-6 py-2">
             <DonutChart
-              segments={categoryData.length > 0 ? categoryData : [{ label: "No Data", value: 1, color: "#334155" }]}
+              segments={
+                categoryData.length > 0
+                  ? categoryData
+                  : [{ label: "No Data", value: 1, color: "#334155" }]
+              }
               centerLabel={`${total}`}
               centerSub="Total"
               size={150}
@@ -618,9 +759,16 @@ export function AnalyticsPage() {
             <div className="grid grid-cols-2 gap-x-6 gap-y-2 w-full">
               {categoryData.map((seg) => (
                 <div key={seg.label} className="flex items-center gap-2">
-                  <div className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ backgroundColor: seg.color }} />
-                  <span className="text-[11px] text-slate-400 font-medium truncate">{seg.label}</span>
-                  <span className="text-[11px] font-bold text-slate-300 ml-auto tabular-nums">{seg.value}</span>
+                  <div
+                    className="w-2.5 h-2.5 rounded-sm shrink-0"
+                    style={{ backgroundColor: seg.color }}
+                  />
+                  <span className="text-[11px] text-slate-400 font-medium truncate">
+                    {seg.label}
+                  </span>
+                  <span className="text-[11px] font-bold text-slate-300 ml-auto tabular-nums">
+                    {seg.value}
+                  </span>
                 </div>
               ))}
             </div>
@@ -636,12 +784,20 @@ export function AnalyticsPage() {
             <div className="p-1.5 rounded-lg bg-rose-500/10 border border-rose-500/20">
               <Flame className="h-4 w-4 text-rose-400" />
             </div>
-            <h2 className="text-xs font-bold uppercase tracking-wider text-white">Severity Distribution</h2>
+            <h2 className="text-xs font-bold uppercase tracking-wider text-white">
+              Severity Distribution
+            </h2>
           </div>
 
           <div className="space-y-4">
             {severityData.map((sev) => (
-              <HorizontalBar key={sev.label} label={sev.label} value={sev.count} maxValue={maxSeverity} color={sev.color} />
+              <HorizontalBar
+                key={sev.label}
+                label={sev.label}
+                value={sev.count}
+                maxValue={maxSeverity}
+                color={sev.color}
+              />
             ))}
           </div>
 
@@ -663,9 +819,13 @@ export function AnalyticsPage() {
               <div className="p-1.5 rounded-lg bg-brand-500/10 border border-brand-500/20">
                 <BarChart3 className="h-4 w-4 text-brand-400" />
               </div>
-              <h2 className="text-xs font-bold uppercase tracking-wider text-white">Dept. SLA Performance</h2>
+              <h2 className="text-xs font-bold uppercase tracking-wider text-white">
+                Dept. SLA Performance
+              </h2>
             </div>
-            <span className="text-[9px] text-slate-500 font-mono font-bold uppercase">On-Time %</span>
+            <span className="text-[9px] text-slate-500 font-mono font-bold uppercase">
+              On-Time %
+            </span>
           </div>
 
           <div className="space-y-4">
@@ -677,7 +837,11 @@ export function AnalyticsPage() {
                     {dept.name}
                   </span>
                   <div className="flex items-center gap-2">
-                    <span className={`font-mono font-bold ${dept.rate >= dept.target ? "text-emerald-400" : "text-amber-400"}`}>{dept.rate}%</span>
+                    <span
+                      className={`font-mono font-bold ${dept.rate >= dept.target ? "text-emerald-400" : "text-amber-400"}`}
+                    >
+                      {dept.rate}%
+                    </span>
                     {dept.rate >= dept.target ? (
                       <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
                     ) : (
@@ -687,10 +851,17 @@ export function AnalyticsPage() {
                 </div>
                 <div className="relative h-2 w-full bg-slate-800/60 rounded-full overflow-hidden">
                   {/* Target marker */}
-                  <div className="absolute top-0 h-full w-px bg-slate-400/30 z-10" style={{ left: `${dept.target}%` }} />
+                  <div
+                    className="absolute top-0 h-full w-px bg-slate-400/30 z-10"
+                    style={{ left: `${dept.target}%` }}
+                  />
                   <div
                     className="h-full rounded-full transition-all duration-1000 ease-out"
-                    style={{ width: `${dept.rate}%`, backgroundColor: dept.color, boxShadow: `0 0 8px ${dept.color}40` }}
+                    style={{
+                      width: `${dept.rate}%`,
+                      backgroundColor: dept.color,
+                      boxShadow: `0 0 8px ${dept.color}40`,
+                    }}
                   />
                 </div>
               </div>
@@ -705,10 +876,13 @@ export function AnalyticsPage() {
               <div className="p-1.5 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
                 <Sparkles className="h-4 w-4 text-cyan-400" />
               </div>
-              <h2 className="text-xs font-bold uppercase tracking-wider text-white">AI Engine Health</h2>
+              <h2 className="text-xs font-bold uppercase tracking-wider text-white">
+                AI Engine Health
+              </h2>
             </div>
             <p className="text-xs text-slate-400 leading-relaxed">
-              Antigravity 3.5 Flash High continuously scans incoming reports for duplicate detection, GPS anomaly verification, and severity grading.
+              Antigravity 3.5 Flash High continuously scans incoming reports for duplicate
+              detection, GPS anomaly verification, and severity grading.
             </p>
           </div>
 
@@ -728,7 +902,9 @@ export function AnalyticsPage() {
             </div>
             <div>
               <p className="text-xs font-bold text-emerald-400">Zero System Bottlenecks</p>
-              <p className="text-[10px] text-slate-400 mt-0.5">All 5 municipal zones within SLA thresholds.</p>
+              <p className="text-[10px] text-slate-400 mt-0.5">
+                All 5 municipal zones within SLA thresholds.
+              </p>
             </div>
           </div>
         </div>
@@ -743,7 +919,9 @@ export function AnalyticsPage() {
               <div className="p-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
                 <Eye className="h-4 w-4 text-indigo-400" />
               </div>
-              <h2 className="text-xs font-bold uppercase tracking-wider text-white">Recent Activity</h2>
+              <h2 className="text-xs font-bold uppercase tracking-wider text-white">
+                Recent Activity
+              </h2>
             </div>
             <span className="text-[10px] text-slate-500 font-mono">Live feed</span>
           </div>
@@ -751,20 +929,28 @@ export function AnalyticsPage() {
           {recentActivity.length > 0 ? (
             <div className="divide-y divide-slate-800/40">
               {recentActivity.map((item) => (
-                <div key={item.id} className="flex items-center gap-4 py-3 group hover:bg-slate-800/20 rounded-lg px-2 -mx-2 transition-colors">
+                <div
+                  key={item.id}
+                  className="flex items-center gap-4 py-3 group hover:bg-slate-800/20 rounded-lg px-2 -mx-2 transition-colors"
+                >
                   <div className="w-8 h-8 rounded-lg bg-slate-800/60 border border-slate-700/40 flex items-center justify-center shrink-0">
                     <MapPin className="h-3.5 w-3.5 text-slate-400" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-semibold text-slate-200 truncate">{item.title}</p>
                     <p className="text-[10px] text-slate-500 mt-0.5">
-                      <span className="font-mono">#{item.id}</span> · {item.category.replace("_", " ")}
+                      <span className="font-mono">#{item.id}</span> ·{" "}
+                      {item.category.replace("_", " ")}
                     </p>
                   </div>
-                  <span className={`px-2 py-0.5 rounded-md text-[9px] font-bold border ${statusColor[item.status]}`}>
+                  <span
+                    className={`px-2 py-0.5 rounded-md text-[9px] font-bold border ${statusColor[item.status]}`}
+                  >
                     {item.status.replace("_", " ")}
                   </span>
-                  <span className="text-[10px] text-slate-500 font-mono whitespace-nowrap hidden sm:block">{item.time}</span>
+                  <span className="text-[10px] text-slate-500 font-mono whitespace-nowrap hidden sm:block">
+                    {item.time}
+                  </span>
                 </div>
               ))}
             </div>
@@ -784,15 +970,21 @@ export function AnalyticsPage() {
               <div className="p-1.5 rounded-lg bg-purple-500/10 border border-purple-500/20">
                 <Users className="h-4 w-4 text-purple-400" />
               </div>
-              <h3 className="text-xs font-bold uppercase tracking-wider text-white">Citizen Engagement</h3>
+              <h3 className="text-xs font-bold uppercase tracking-wider text-white">
+                Citizen Engagement
+              </h3>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="text-center p-3 rounded-xl bg-slate-800/30 border border-slate-700/30">
-                <p className="text-xl font-extrabold text-white tabular-nums">{Math.max(total * 3, 24)}</p>
+                <p className="text-xl font-extrabold text-white tabular-nums">
+                  {Math.max(total * 3, 24)}
+                </p>
                 <p className="text-[10px] text-slate-500 font-semibold mt-1">Total Upvotes</p>
               </div>
               <div className="text-center p-3 rounded-xl bg-slate-800/30 border border-slate-700/30">
-                <p className="text-xl font-extrabold text-white tabular-nums">{Math.max(Math.ceil(total * 0.8), 5)}</p>
+                <p className="text-xl font-extrabold text-white tabular-nums">
+                  {Math.max(Math.ceil(total * 0.8), 5)}
+                </p>
                 <p className="text-[10px] text-slate-500 font-semibold mt-1">Unique Reporters</p>
               </div>
             </div>
@@ -804,7 +996,9 @@ export function AnalyticsPage() {
               <div className="p-1.5 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
                 <Zap className="h-4 w-4 text-cyan-400" />
               </div>
-              <h3 className="text-xs font-bold uppercase tracking-wider text-white">AI Processing</h3>
+              <h3 className="text-xs font-bold uppercase tracking-wider text-white">
+                AI Processing
+              </h3>
             </div>
             <div className="space-y-3">
               <div className="flex items-center justify-between">
@@ -835,7 +1029,8 @@ export function AnalyticsPage() {
               <div>
                 <p className="text-xs font-bold text-emerald-400">SLA Compliance: 94.3%</p>
                 <p className="text-[10px] text-slate-400 mt-0.5">
-                  Average across all 5 departments. {departments.filter((d) => d.rate >= d.target).length} of 5 meeting targets.
+                  Average across all 5 departments.{" "}
+                  {departments.filter((d) => d.rate >= d.target).length} of 5 meeting targets.
                 </p>
               </div>
             </div>
