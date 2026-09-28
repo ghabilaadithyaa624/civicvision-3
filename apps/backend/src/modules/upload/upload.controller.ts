@@ -16,13 +16,21 @@ fs.promises.mkdir(UPLOADS_DIR, { recursive: true }).catch((err) => {
   console.error("Failed to create uploads directory:", err);
 });
 
+const MIME_TYPE_MAP: Record<string, string> = {
+  "image/jpeg": ".jpg",
+  "image/png": ".png",
+  "image/webp": ".webp",
+};
+
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => {
     cb(null, UPLOADS_DIR);
   },
   filename: (_req, file, cb) => {
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    const ext = path.extname(file.originalname);
+    // 🛡️ SECURITY: Prevent extension spoofing (Stored XSS) by explicitly mapping
+    // the validated mimetype to a hardcoded secure extension, ignoring file.originalname.
+    const ext = MIME_TYPE_MAP[file.mimetype] || ".bin";
     cb(null, `${uniqueSuffix}${ext}`);
   },
 });
