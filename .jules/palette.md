@@ -1,0 +1,3 @@
+## 2024-05-14 - Accessible InputField with Error State
+**Learning:** When implementing ARIA attributes like `aria-describedby` on shared React components, you must explicitly merge them with potentially passed `rest` props (e.g., `[rest['aria-describedby'], errorId].filter(Boolean).join(' ') || undefined`) and place the `{...rest}` spread before the explicit attributes. This prevents parent components from inadvertently overriding the component's internal accessibility bindings, ensuring screen readers announce the validation context correctly.
+**Action:** Always check the order of `{...rest}` spreads in reusable components and safely merge list-like ARIA attributes (like `aria-describedby` or `aria-labelledby`) instead of overwriting them.
