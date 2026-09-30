@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   useIssuesQuery,
   useUpdateIssueStatusMutation,
@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { Button } from "@civicvision/shared-ui";
 import { useAppSelector } from "@/store/hooks";
+import type { IssueReport } from "@civicvision/shared-types";
 
 export function FieldWorkerDashboard() {
   const { data: issues, isLoading, refetch } = useIssuesQuery();
@@ -24,27 +25,47 @@ export function FieldWorkerDashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterTab, setFilterTab] = useState<"available" | "my-tasks" | "completed">("available");
 
-  // Filter issues
-  const pendingIssues = issues?.filter((i) => i.status === "PENDING") || [];
-  const inProgressIssues = issues?.filter((i) => i.status === "IN_PROGRESS") || [];
-  const resolvedIssues = issues?.filter((i) => i.status === "RESOLVED") || [];
+  // ⚡ Bolt: Single-pass iteration replacing multiple .filter() calls O(3N) -> O(N)
+  const { pendingIssues, inProgressIssues, resolvedIssues } = useMemo(() => {
+    const pending = [] as IssueReport[];
+    const inProgress = [] as IssueReport[];
+    const resolved = [] as IssueReport[];
 
-  // Filter based on active tab
-  let displayedIssues = [];
-  if (filterTab === "available") {
-    displayedIssues = pendingIssues;
-  } else if (filterTab === "my-tasks") {
-    displayedIssues = inProgressIssues;
-  } else {
-    displayedIssues = resolvedIssues;
-  }
+    if (issues) {
+      for (const issue of issues) {
+        if (issue.status === "PENDING") {
+          pending.push(issue);
+        } else if (issue.status === "IN_PROGRESS") {
+          inProgress.push(issue);
+        } else if (issue.status === "RESOLVED") {
+          resolved.push(issue);
+        }
+      }
+    }
 
-  // Search filter
-  displayedIssues = displayedIssues.filter(
-    (i) =>
-      i.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      i.category.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+    return { pendingIssues: pending, inProgressIssues: inProgress, resolvedIssues: resolved };
+  }, [issues]);
+
+  // ⚡ Bolt: Memoized search & tab filtering, pulling toLowerCase() out of the loop
+  const displayedIssues = useMemo(() => {
+    let baseIssues = [] as IssueReport[];
+    if (filterTab === "available") {
+      baseIssues = pendingIssues;
+    } else if (filterTab === "my-tasks") {
+      baseIssues = inProgressIssues;
+    } else {
+      baseIssues = resolvedIssues;
+    }
+
+    if (!searchQuery) return baseIssues;
+
+    const lowerQuery = searchQuery.toLowerCase();
+    return baseIssues.filter(
+      (i) =>
+        i.title.toLowerCase().includes(lowerQuery) ||
+        i.category.toLowerCase().includes(lowerQuery)
+    );
+  }, [filterTab, pendingIssues, inProgressIssues, resolvedIssues, searchQuery]);
 
   const handlePickUpTask = (issueId: string) => {
     updateStatusMutation.mutate({ id: issueId, status: "IN_PROGRESS" });
