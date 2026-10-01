@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import type { IssueReport } from "@civicvision/shared-types";
 import {
   useIssuesQuery,
   useUpdateIssueStatusMutation,
@@ -24,10 +25,26 @@ export function FieldWorkerDashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterTab, setFilterTab] = useState<"available" | "my-tasks" | "completed">("available");
 
-  // Filter issues
-  const pendingIssues = issues?.filter((i) => i.status === "PENDING") || [];
-  const inProgressIssues = issues?.filter((i) => i.status === "IN_PROGRESS") || [];
-  const resolvedIssues = issues?.filter((i) => i.status === "RESOLVED") || [];
+  // Filter issues - Optimized into a single-pass loop with useMemo to prevent multiple O(N) filters on each re-render
+  const { pendingIssues, inProgressIssues, resolvedIssues } = useMemo(() => {
+    const acc = {
+      pendingIssues: [] as IssueReport[],
+      inProgressIssues: [] as IssueReport[],
+      resolvedIssues: [] as IssueReport[],
+    };
+    if (!issues) return acc;
+
+    for (const issue of issues) {
+      if (issue.status === "PENDING") {
+        acc.pendingIssues.push(issue);
+      } else if (issue.status === "IN_PROGRESS") {
+        acc.inProgressIssues.push(issue);
+      } else if (issue.status === "RESOLVED") {
+        acc.resolvedIssues.push(issue);
+      }
+    }
+    return acc;
+  }, [issues]);
 
   // Filter based on active tab
   let displayedIssues = [];
