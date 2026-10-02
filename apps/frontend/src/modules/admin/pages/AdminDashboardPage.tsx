@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Users,
   Shield,
@@ -30,10 +30,20 @@ export function AdminDashboardPage() {
   const [activeTab, setActiveTab] = useState<"users" | "issues">("users");
 
   // Statistics
-  const totalUsers = users?.length || 0;
-  const totalCitizens = users?.filter((u) => u.role === "CITIZEN").length || 0;
-  const totalAgents = users?.filter((u) => u.role === "FIELD_AGENT").length || 0;
-  const totalAdmins = users?.filter((u) => u.role === "ADMIN").length || 0;
+  // ⚡ Bolt Optimization: Replaced multiple O(N) .filter().length calls with a single O(N)
+  // pass inside a useMemo hook. Reduces redundant array traversals on every render.
+  const { totalUsers, totalCitizens, totalAgents, totalAdmins } = useMemo(() => {
+    let t = 0, c = 0, ag = 0, ad = 0;
+    if (users) {
+      t = users.length;
+      for (const u of users) {
+        if (u.role === "CITIZEN") c++;
+        else if (u.role === "FIELD_AGENT") ag++;
+        else if (u.role === "ADMIN") ad++;
+      }
+    }
+    return { totalUsers: t, totalCitizens: c, totalAgents: ag, totalAdmins: ad };
+  }, [users]);
 
   const totalIssues = issues?.length || 0;
 
