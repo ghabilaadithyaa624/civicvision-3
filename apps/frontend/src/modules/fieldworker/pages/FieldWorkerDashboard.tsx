@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   useIssuesQuery,
   useUpdateIssueStatusMutation,
@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { Button } from "@civicvision/shared-ui";
 import { useAppSelector } from "@/store/hooks";
+import type { IssueReport } from "@civicvision/shared-types";
 
 export function FieldWorkerDashboard() {
   const { data: issues, isLoading, refetch } = useIssuesQuery();
@@ -24,10 +25,24 @@ export function FieldWorkerDashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterTab, setFilterTab] = useState<"available" | "my-tasks" | "completed">("available");
 
-  // Filter issues
-  const pendingIssues = issues?.filter((i) => i.status === "PENDING") || [];
-  const inProgressIssues = issues?.filter((i) => i.status === "IN_PROGRESS") || [];
-  const resolvedIssues = issues?.filter((i) => i.status === "RESOLVED") || [];
+  // Optimize: single-pass iteration with useMemo to prevent O(3N) and avoid re-calculating on every re-render
+  const { pendingIssues, inProgressIssues, resolvedIssues } = useMemo(() => {
+    if (!issues) return { pendingIssues: [], inProgressIssues: [], resolvedIssues: [] };
+
+    return issues.reduce(
+      (acc, issue) => {
+        if (issue.status === "PENDING") acc.pendingIssues.push(issue);
+        else if (issue.status === "IN_PROGRESS") acc.inProgressIssues.push(issue);
+        else if (issue.status === "RESOLVED") acc.resolvedIssues.push(issue);
+        return acc;
+      },
+      {
+        pendingIssues: [] as IssueReport[],
+        inProgressIssues: [] as IssueReport[],
+        resolvedIssues: [] as IssueReport[],
+      }
+    );
+  }, [issues]);
 
   // Filter based on active tab
   let displayedIssues = [];
