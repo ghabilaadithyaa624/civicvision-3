@@ -1,0 +1,3 @@
+## 2024-10-03 - Dynamic Error Linking and Props Spreading Order
+**Learning:** When linking dynamic error messages to input fields using `aria-describedby` in shared React components, it's crucial to explicitly merge the component's internal `aria-describedby` ID with any potential `rest['aria-describedby']` passed from the parent. Otherwise, parent bindings could be lost. Furthermore, the `{...rest}` spread must be placed before explicitly defined attributes like `aria-invalid` or `aria-describedby` in the JSX element to prevent parent props from accidentally overwriting the merged internal bindings.
+**Action:** Always merge `aria-describedby` with parent `rest` props and explicitly define internal ARIA attributes after the `{...rest}` spread in shared UI components.
