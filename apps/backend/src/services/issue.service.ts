@@ -49,7 +49,7 @@ export class IssueService {
             if (result.success && result.detections && result.detections.length > 0) {
               // Find the detection with the highest confidence
               const bestDetection = result.detections.reduce((best, current) =>
-                current.confidence > best.confidence ? current : best
+                current.confidence > best.confidence ? current : best,
               );
 
               // Map label to IssueCategory
@@ -58,7 +58,7 @@ export class IssueService {
                 aiCategory = mappedCategory;
                 aiConfidence = bestDetection.confidence;
                 logger.info(
-                  `AI detection succeeded: mapped to ${aiCategory} with confidence ${aiConfidence}`
+                  `AI detection succeeded: mapped to ${aiCategory} with confidence ${aiConfidence}`,
                 );
               }
             } else {
@@ -112,15 +112,32 @@ export class IssueService {
   }
 
   private resolveImagePath(imageUrl: string): string | null {
+    const publicDir = path.resolve(__dirname, "../../../public");
+    let targetPath: string;
+
+    // Security Fix: Prevent Path Traversal (LFI)
     // If it's a relative uploads path e.g. /uploads/abc.jpg
     if (imageUrl.startsWith("/uploads/")) {
-      return path.join(__dirname, "../../../public", imageUrl);
+      // Prepend dot so path.resolve treats it as relative to publicDir instead of system root
+      targetPath = path.resolve(publicDir, "." + imageUrl);
     }
     // If it's an absolute path
-    if (path.isAbsolute(imageUrl)) {
-      return imageUrl;
+    else if (path.isAbsolute(imageUrl)) {
+      targetPath = path.resolve(imageUrl);
+    } else {
+      return null;
     }
-    return null;
+
+    // Secure boundary check: ensure resolved path is strictly within publicDir
+    // Normalize paths to ensure consistent separator comparisons
+    const normalizedTarget = path.normalize(targetPath);
+    const normalizedPublicDir = path.normalize(publicDir) + path.sep;
+
+    if (!normalizedTarget.startsWith(normalizedPublicDir)) {
+      return null;
+    }
+
+    return targetPath;
   }
 
   private mapLabelToCategory(label: string): IssueCategory | null {
