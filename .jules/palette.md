@@ -1,0 +1,3 @@
+## 2024-10-04 - Accessible Form Errors in Shared UI
+**Learning:** When creating shared accessible form components (like `InputField`), explicitly merging internal `aria-describedby` values with `rest['aria-describedby']` is required to prevent parent components from overriding internal bindings. Furthermore, spreading `{...rest}` must occur before explicit internal attributes like `aria-invalid` or `aria-describedby`.
+**Action:** When creating reusable UI components, always prepend `{...rest}` before explicitly setting ARIA or layout attributes, and explicitly merge `className`, `aria-describedby`, and other combinable attributes to ensure robust accessibility.
