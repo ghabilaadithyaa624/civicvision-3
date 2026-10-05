@@ -112,15 +112,31 @@ export class IssueService {
   }
 
   private resolveImagePath(imageUrl: string): string | null {
-    // If it's a relative uploads path e.g. /uploads/abc.jpg
-    if (imageUrl.startsWith("/uploads/")) {
-      return path.join(__dirname, "../../../public", imageUrl);
+    // We only resolve paths within our controlled public directory
+    const baseDir = path.resolve(__dirname, "../../../public");
+
+    // Explicitly prepend a dot to handle cases where imageUrl starts with a slash
+    // path.resolve interprets leading slashes as absolute roots, which would bypass the baseDir
+    const normalizedPath = imageUrl.startsWith("/") ? "." + imageUrl : imageUrl;
+    const resolvedPath = path.resolve(baseDir, normalizedPath);
+
+    // Prevent Path Traversal (LFI) by strictly validating the resolved path
+    // stays inside the intended base directory boundary
+    if (!resolvedPath.startsWith(baseDir + path.sep)) {
+      logger.warn(`Path traversal attempt blocked for imageUrl: ${imageUrl}`);
+      return null;
     }
-    // If it's an absolute path
-    if (path.isAbsolute(imageUrl)) {
-      return imageUrl;
+
+    // Only allow specific extensions for images to avoid executing or returning
+    // unauthorized file types.
+    const validExts = [".jpg", ".jpeg", ".png", ".webp"];
+    const ext = path.extname(resolvedPath).toLowerCase();
+    if (!validExts.includes(ext)) {
+      logger.warn(`Invalid image extension blocked for imageUrl: ${imageUrl}`);
+      return null;
     }
-    return null;
+
+    return resolvedPath;
   }
 
   private mapLabelToCategory(label: string): IssueCategory | null {
