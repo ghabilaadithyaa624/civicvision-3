@@ -1,0 +1,3 @@
+## 2024-10-05 - Safe ARIA merging in shared components
+**Learning:** When passing generic props (`...rest`) to input components alongside conditionally generated accessibility attributes (like `aria-describedby` for validation errors), standard object spreading will inadvertently overwrite parent props if placed after explicitly defined ones. Simply moving `{...rest}` to the top prevents overwriting internal logic, but drops any `aria-describedby` provided by the parent.
+**Action:** Always spread `{...rest}` before explicit bindings, and explicitly merge complex accessibility attributes together, such as `aria-describedby={[rest['aria-describedby'], errorId].filter(Boolean).join(' ') || undefined}`.
