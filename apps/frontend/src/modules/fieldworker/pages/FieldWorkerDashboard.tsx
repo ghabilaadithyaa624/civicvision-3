@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   useIssuesQuery,
   useUpdateIssueStatusMutation,
@@ -24,27 +24,39 @@ export function FieldWorkerDashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterTab, setFilterTab] = useState<"available" | "my-tasks" | "completed">("available");
 
-  // Filter issues
-  const pendingIssues = issues?.filter((i) => i.status === "PENDING") || [];
-  const inProgressIssues = issues?.filter((i) => i.status === "IN_PROGRESS") || [];
-  const resolvedIssues = issues?.filter((i) => i.status === "RESOLVED") || [];
+  // Categorize issues by status in a single pass
+  const { pendingIssues, inProgressIssues, resolvedIssues } = useMemo(() => {
+    // Explicitly type the arrays to prevent implicit any errors
+    const pending: typeof issues = [];
+    const inProgress: typeof issues = [];
+    const resolved: typeof issues = [];
+    if (issues) {
+      for (const i of issues) {
+        if (i.status === "PENDING") pending.push(i);
+        else if (i.status === "IN_PROGRESS") inProgress.push(i);
+        else if (i.status === "RESOLVED") resolved.push(i);
+      }
+    }
+    return { pendingIssues: pending, inProgressIssues: inProgress, resolvedIssues: resolved };
+  }, [issues]);
 
-  // Filter based on active tab
-  let displayedIssues = [];
-  if (filterTab === "available") {
-    displayedIssues = pendingIssues;
-  } else if (filterTab === "my-tasks") {
-    displayedIssues = inProgressIssues;
-  } else {
-    displayedIssues = resolvedIssues;
-  }
+  // Memoize filtered displayed issues based on tab and search
+  const displayedIssues = useMemo(() => {
+    let base = pendingIssues;
+    if (filterTab === "my-tasks") {
+      base = inProgressIssues;
+    } else if (filterTab === "completed") {
+      base = resolvedIssues;
+    }
 
-  // Search filter
-  displayedIssues = displayedIssues.filter(
-    (i) =>
-      i.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      i.category.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+    if (!searchQuery) return base;
+    const lowerQ = searchQuery.toLowerCase();
+    return base.filter(
+      (i) =>
+        i.title.toLowerCase().includes(lowerQ) ||
+        i.category.toLowerCase().includes(lowerQ)
+    );
+  }, [filterTab, searchQuery, pendingIssues, inProgressIssues, resolvedIssues]);
 
   const handlePickUpTask = (issueId: string) => {
     updateStatusMutation.mutate({ id: issueId, status: "IN_PROGRESS" });
