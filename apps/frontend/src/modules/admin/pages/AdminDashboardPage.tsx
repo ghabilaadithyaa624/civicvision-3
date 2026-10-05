@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Users,
   Shield,
@@ -31,26 +31,46 @@ export function AdminDashboardPage() {
 
   // Statistics
   const totalUsers = users?.length || 0;
-  const totalCitizens = users?.filter((u) => u.role === "CITIZEN").length || 0;
-  const totalAgents = users?.filter((u) => u.role === "FIELD_AGENT").length || 0;
-  const totalAdmins = users?.filter((u) => u.role === "ADMIN").length || 0;
+  const { totalCitizens, totalAgents, totalAdmins } = useMemo(() => {
+    let citizens = 0;
+    let agents = 0;
+    let admins = 0;
+    if (users) {
+      for (const u of users) {
+        if (u.role === "CITIZEN") citizens++;
+        else if (u.role === "FIELD_AGENT") agents++;
+        else if (u.role === "ADMIN") admins++;
+      }
+    }
+    return { totalCitizens: citizens, totalAgents: agents, totalAdmins: admins };
+  }, [users]);
 
   const totalIssues = issues?.length || 0;
 
   // Filtered lists
-  const filteredUsers = users?.filter(
-    (u) =>
-      u.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      u.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      u.role.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredUsers = useMemo(() => {
+    if (!users) return undefined;
+    if (!searchQuery) return users;
+    const lowerQ = searchQuery.toLowerCase();
+    return users.filter(
+      (u) =>
+        u.fullName.toLowerCase().includes(lowerQ) ||
+        u.email.toLowerCase().includes(lowerQ) ||
+        u.role.toLowerCase().includes(lowerQ)
+    );
+  }, [users, searchQuery]);
 
-  const filteredIssues = issues?.filter(
-    (i) =>
-      i.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      i.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      i.status.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredIssues = useMemo(() => {
+    if (!issues) return undefined;
+    if (!searchQuery) return issues;
+    const lowerQ = searchQuery.toLowerCase();
+    return issues.filter(
+      (i) =>
+        i.title.toLowerCase().includes(lowerQ) ||
+        i.category.toLowerCase().includes(lowerQ) ||
+        i.status.toLowerCase().includes(lowerQ)
+    );
+  }, [issues, searchQuery]);
 
   const handleRoleChange = (userId: string, newRole: UserRole) => {
     updateRoleMutation.mutate({ id: userId, role: newRole });
