@@ -90,3 +90,22 @@ describe("GET /api/v1/auth/me — authentication", () => {
     expect(res.status).not.toBe(200);
   });
 });
+
+describe("PATCH /api/v1/auth/role — privilege escalation", () => {
+  it("rejects non-admin users from updating roles", async () => {
+    // Signed with the same JWT_SECRET the test environment sets in jest.setup.js
+    const token = jwt.sign(
+      { sub: "some-user-id", email: "citizen@example.com", role: "CITIZEN" },
+      process.env.JWT_SECRET as string,
+      { expiresIn: "1h" },
+    );
+
+    const res = await request(app)
+      .patch("/api/v1/auth/role")
+      .set("Authorization", `Bearer ${token}`)
+      .send({ role: "ADMIN" });
+
+    expect(res.status).toBe(403);
+    expect(res.body.success).toBe(false);
+  });
+});
