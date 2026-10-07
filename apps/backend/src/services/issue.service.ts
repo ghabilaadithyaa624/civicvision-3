@@ -49,7 +49,7 @@ export class IssueService {
             if (result.success && result.detections && result.detections.length > 0) {
               // Find the detection with the highest confidence
               const bestDetection = result.detections.reduce((best, current) =>
-                current.confidence > best.confidence ? current : best
+                current.confidence > best.confidence ? current : best,
               );
 
               // Map label to IssueCategory
@@ -58,7 +58,7 @@ export class IssueService {
                 aiCategory = mappedCategory;
                 aiConfidence = bestDetection.confidence;
                 logger.info(
-                  `AI detection succeeded: mapped to ${aiCategory} with confidence ${aiConfidence}`
+                  `AI detection succeeded: mapped to ${aiCategory} with confidence ${aiConfidence}`,
                 );
               }
             } else {
@@ -112,14 +112,19 @@ export class IssueService {
   }
 
   private resolveImagePath(imageUrl: string): string | null {
-    // If it's a relative uploads path e.g. /uploads/abc.jpg
+    // We only resolve paths meant for the /uploads/ directory to preserve application logic
     if (imageUrl.startsWith("/uploads/")) {
-      return path.join(__dirname, "../../../public", imageUrl);
+      const baseDir = path.resolve(__dirname, "../../../public");
+      // Prepend a dot if it starts with a slash to prevent path.resolve from treating it as absolute system root
+      const safePath = imageUrl.startsWith("/") ? "." + imageUrl : imageUrl;
+      const resolvedPath = path.resolve(baseDir, safePath);
+
+      // Strict boundary check to prevent path traversal
+      if (resolvedPath.startsWith(baseDir + path.sep)) {
+        return resolvedPath;
+      }
     }
-    // If it's an absolute path
-    if (path.isAbsolute(imageUrl)) {
-      return imageUrl;
-    }
+    // Absolute paths from arbitrary user input are unsafe and not supported
     return null;
   }
 
