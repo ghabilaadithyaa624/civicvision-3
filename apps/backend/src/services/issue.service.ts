@@ -112,14 +112,27 @@ export class IssueService {
   }
 
   private resolveImagePath(imageUrl: string): string | null {
-    // If it's a relative uploads path e.g. /uploads/abc.jpg
+    const publicDir = path.resolve(__dirname, "../../../public");
+
+    // Explicitly resolve the user-provided URL against the public directory.
+    // Prepending '.' ensures that absolute paths from user input do not overwrite the base dir.
+    let safeInput = imageUrl;
+    if (safeInput.startsWith("/")) {
+      safeInput = "." + safeInput;
+    }
+
+    const resolvedPath = path.resolve(publicDir, safeInput);
+
+    // Strict boundary check to prevent path traversal
+    if (!resolvedPath.startsWith(publicDir + path.sep)) {
+      return null;
+    }
+
+    // Ensure we maintain backward compatibility for valid /uploads/ paths
     if (imageUrl.startsWith("/uploads/")) {
-      return path.join(__dirname, "../../../public", imageUrl);
+      return resolvedPath;
     }
-    // If it's an absolute path
-    if (path.isAbsolute(imageUrl)) {
-      return imageUrl;
-    }
+
     return null;
   }
 
