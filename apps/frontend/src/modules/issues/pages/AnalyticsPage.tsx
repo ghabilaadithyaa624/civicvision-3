@@ -281,17 +281,40 @@ export function AnalyticsPage() {
 
   // Derived metrics
   const total = issues?.length || 0;
-  const resolved = issues?.filter((i) => i.status === "RESOLVED").length || 0;
-  const pending = issues?.filter((i) => i.status === "PENDING").length || 0;
-  const inProgress = issues?.filter((i) => i.status === "IN_PROGRESS").length || 0;
-  const rejected = issues?.filter((i) => i.status === "REJECTED").length || 0;
-  const resolutionRate = total > 0 ? Math.round((resolved / total) * 100) : 0;
-  const avgAiConfidence = useMemo(() => {
-    if (!issues?.length) return 96.4;
-    const withConf = issues.filter((i) => i.aiConfidence !== null);
-    if (!withConf.length) return 96.4;
-    return Math.round((withConf.reduce((s, i) => s + (i.aiConfidence || 0), 0) / withConf.length) * 10) / 10;
+
+  // ⚡ Bolt: Single-pass iteration to prevent O(N) operations on every re-render (which happens at 60fps due to useAnimatedNumber)
+  const { resolved, pending, inProgress, rejected, avgAiConfidence } = useMemo(() => {
+    let _resolved = 0;
+    let _pending = 0;
+    let _inProgress = 0;
+    let _rejected = 0;
+    let _aiConfSum = 0;
+    let _aiConfCount = 0;
+
+    if (issues?.length) {
+      for (const i of issues) {
+        if (i.status === "RESOLVED") _resolved++;
+        else if (i.status === "PENDING") _pending++;
+        else if (i.status === "IN_PROGRESS") _inProgress++;
+        else if (i.status === "REJECTED") _rejected++;
+
+        if (i.aiConfidence !== null && i.aiConfidence !== undefined) {
+          _aiConfSum += i.aiConfidence;
+          _aiConfCount++;
+        }
+      }
+    }
+
+    return {
+      resolved: _resolved,
+      pending: _pending,
+      inProgress: _inProgress,
+      rejected: _rejected,
+      avgAiConfidence: _aiConfCount > 0 ? Math.round((_aiConfSum / _aiConfCount) * 10) / 10 : 96.4,
+    };
   }, [issues]);
+
+  const resolutionRate = total > 0 ? Math.round((resolved / total) * 100) : 0;
 
   // Category breakdown
   const categoryData = useMemo(() => {
