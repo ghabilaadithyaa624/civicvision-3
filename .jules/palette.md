@@ -1,0 +1,3 @@
+## 2024-05-24 - InputField Accessibility Enhancement
+**Learning:** When creating shared components like `InputField` with dynamic error messages, failing to explicitly link the input to its error message via `aria-describedby` results in a poor screen reader experience, as the error context is lost. Merging internally computed bindings with potential `rest` props (e.g., `rest['aria-describedby']`) ensures parent component overrides are respected without breaking internal accessibility.
+**Action:** Always implement `aria-describedby` for form inputs with validation errors, explicitly link the error element's ID, and merge attributes carefully when spreading `rest` props.
