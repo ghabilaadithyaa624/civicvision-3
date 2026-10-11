@@ -22,8 +22,21 @@ export class IssueService {
     if (data.imageUrl) {
       try {
         const resolvedPath = this.resolveImagePath(data.imageUrl);
-        if (resolvedPath && fs.existsSync(resolvedPath)) {
-          const fileBuffer = await fs.promises.readFile(resolvedPath);
+        if (resolvedPath) {
+          let fileBuffer;
+          try {
+            fileBuffer = await fs.promises.readFile(resolvedPath);
+          } catch (err) {
+            if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
+              logger.warn(`Image file does not exist at resolved path: ${resolvedPath}`);
+              return this.issueRepository.create({
+                ...data,
+                category: aiCategory ?? data.category,
+                aiConfidence,
+              });
+            }
+            throw err;
+          }
           const filename = path.basename(resolvedPath);
 
           // Build native FormData for multipart upload
@@ -49,7 +62,7 @@ export class IssueService {
             if (result.success && result.detections && result.detections.length > 0) {
               // Find the detection with the highest confidence
               const bestDetection = result.detections.reduce((best, current) =>
-                current.confidence > best.confidence ? current : best
+                current.confidence > best.confidence ? current : best,
               );
 
               // Map label to IssueCategory
@@ -58,7 +71,7 @@ export class IssueService {
                 aiCategory = mappedCategory;
                 aiConfidence = bestDetection.confidence;
                 logger.info(
-                  `AI detection succeeded: mapped to ${aiCategory} with confidence ${aiConfidence}`
+                  `AI detection succeeded: mapped to ${aiCategory} with confidence ${aiConfidence}`,
                 );
               }
             } else {
@@ -67,8 +80,6 @@ export class IssueService {
           } else {
             logger.warn(`AI service returned status ${aiResponse.status}`);
           }
-        } else {
-          logger.warn(`Image file does not exist at resolved path: ${resolvedPath}`);
         }
       } catch (err) {
         // Graceful degradation: log error but proceed to create the issue
