@@ -280,12 +280,29 @@ export function AnalyticsPage() {
   const [timeRange, setTimeRange] = useState<"7d" | "30d" | "90d">("7d");
 
   // Derived metrics
-  const total = issues?.length || 0;
-  const resolved = issues?.filter((i) => i.status === "RESOLVED").length || 0;
-  const pending = issues?.filter((i) => i.status === "PENDING").length || 0;
-  const inProgress = issues?.filter((i) => i.status === "IN_PROGRESS").length || 0;
-  const rejected = issues?.filter((i) => i.status === "REJECTED").length || 0;
-  const resolutionRate = total > 0 ? Math.round((resolved / total) * 100) : 0;
+  // ⚡ Bolt Optimization: Consolidate multiple O(n) array passes into a single O(n) pass
+  // inside a useMemo. This is critical because useAnimatedNumber causes re-renders at 60fps,
+  // and re-filtering the issues array repeatedly causes unnecessary CPU spikes.
+  const { total, resolved, pending, inProgress, rejected, resolutionRate } = useMemo(() => {
+    const t = issues?.length || 0;
+    let res = 0, pen = 0, inp = 0, rej = 0;
+    if (issues) {
+      for (const i of issues) {
+        if (i.status === "RESOLVED") res++;
+        else if (i.status === "PENDING") pen++;
+        else if (i.status === "IN_PROGRESS") inp++;
+        else if (i.status === "REJECTED") rej++;
+      }
+    }
+    return {
+      total: t,
+      resolved: res,
+      pending: pen,
+      inProgress: inp,
+      rejected: rej,
+      resolutionRate: t > 0 ? Math.round((res / t) * 100) : 0
+    };
+  }, [issues]);
   const avgAiConfidence = useMemo(() => {
     if (!issues?.length) return 96.4;
     const withConf = issues.filter((i) => i.aiConfidence !== null);
