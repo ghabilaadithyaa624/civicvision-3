@@ -1,0 +1,3 @@
+## 2024-10-14 - Fix ARIA prop overriding in Shared UI components
+**Learning:** When passing `{...rest}` to elements with explicit ARIA attributes like `aria-invalid` or `aria-describedby`, placing `{...rest}` after the explicitly bound attributes allows parent components to unintentionally override them, breaking accessibility and form validation states.
+**Action:** Explicitly destructure sensitive ARIA attributes from props, merge them with internal states (e.g., `[ariaDescribedBy, errorId].filter(Boolean).join(' ')`), and ensure `{...rest}` is placed BEFORE the internally computed explicit attributes on the DOM element.
