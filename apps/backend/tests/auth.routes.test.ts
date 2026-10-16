@@ -90,3 +90,20 @@ describe("GET /api/v1/auth/me — authentication", () => {
     expect(res.status).not.toBe(200);
   });
 });
+
+describe("PATCH /api/v1/auth/role — authorization", () => {
+  it("rejects non-admin users with 403", async () => {
+    const token = jwt.sign(
+      { sub: "non-existent-user-id", email: "ghost@example.com", role: "CITIZEN" },
+      process.env.JWT_SECRET as string,
+      { expiresIn: "1h" },
+    );
+
+    const res = await request(app)
+      .patch("/api/v1/auth/role")
+      .set("Authorization", `Bearer ${token}`)
+      .send({ role: "ADMIN" });
+
+    expect(res.status).toBe(403);
+  });
+});
