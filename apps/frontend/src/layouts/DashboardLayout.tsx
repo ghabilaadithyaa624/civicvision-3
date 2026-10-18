@@ -346,6 +346,7 @@ export function DashboardLayout() {
             {/* 🌐 Language Selector Dropdown */}
             <div className="relative">
               <button
+                aria-label="Toggle language selector"
                 onClick={() => {
                   setIsLangOpen(!isLangOpen);
                   setIsNotifOpen(false);
