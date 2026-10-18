@@ -1,0 +1,3 @@
+## 2026-10-18 - Missing ARIA Labels on Mixed Content Header Buttons
+**Learning:** Buttons combining icons and dynamic text (like language selectors showing flags/codes) often lack screen-reader context about their interactive purpose (e.g., "Toggle language selector").
+**Action:** Always add explicit `aria-label` or `aria-expanded` attributes to dropdown toggles, even if they contain text, to clarify the interaction model.
