@@ -33,10 +33,42 @@ interface CivicIssue {
 }
 
 const mockIssues: CivicIssue[] = [
-  { id: "1", x: -80, z: 60, type: "POTHOLE", confidence: 97.4, status: "PENDING", color: "#38bdf8" },
-  { id: "2", x: 60, z: -40, type: "GARBAGE", confidence: 92.8, status: "IN_PROGRESS", color: "#a855f7" },
-  { id: "3", x: -20, z: -80, type: "STREETLIGHT", confidence: 98.9, status: "RESOLVED", color: "#eab308" },
-  { id: "4", x: 90, z: 90, type: "WATER_LEAKAGE", confidence: 94.5, status: "PENDING", color: "#10b981" },
+  {
+    id: "1",
+    x: -80,
+    z: 60,
+    type: "POTHOLE",
+    confidence: 97.4,
+    status: "PENDING",
+    color: "#38bdf8",
+  },
+  {
+    id: "2",
+    x: 60,
+    z: -40,
+    type: "GARBAGE",
+    confidence: 92.8,
+    status: "IN_PROGRESS",
+    color: "#a855f7",
+  },
+  {
+    id: "3",
+    x: -20,
+    z: -80,
+    type: "STREETLIGHT",
+    confidence: 98.9,
+    status: "RESOLVED",
+    color: "#eab308",
+  },
+  {
+    id: "4",
+    x: 90,
+    z: 90,
+    type: "WATER_LEAKAGE",
+    confidence: 94.5,
+    status: "PENDING",
+    color: "#10b981",
+  },
 ];
 
 export function HomePage() {
@@ -47,7 +79,7 @@ export function HomePage() {
     "Initializing computer-vision neural network...",
     "YOLOv11 backend online. Precision: mAP@0.5:0.95 = 0.89",
     "Loaded GIS base grid mapping...",
-    "System listening for citizen reporting telemetry..."
+    "System listening for citizen reporting telemetry...",
   ]);
 
   // 3D Camera State
@@ -68,13 +100,13 @@ export function HomePage() {
     // Generate stylized procedural grid buildings
     const list: Building[] = [];
     const colors = ["#1e293b", "#334155", "#0f172a", "#1e1b4b", "#311042"];
-    
+
     // Create rows and columns of buildings (city block style)
     for (let x = -150; x <= 150; x += 50) {
       for (let z = -150; z <= 150; z += 50) {
         // Leave gaps for roads
         if (Math.abs(x) < 20 || Math.abs(z) < 20) continue;
-        
+
         // Randomize height and width slightly
         if (Math.random() > 0.3) {
           const w = 25 + Math.random() * 15;
@@ -92,8 +124,8 @@ export function HomePage() {
     for (let i = 0; i < 40; i++) {
       const roadIndex = Math.random() > 0.5 ? 1 : 0;
       particles.push({
-        x: roadIndex === 0 ? 0 : (Math.random() * 400 - 200),
-        z: roadIndex === 1 ? 0 : (Math.random() * 400 - 200),
+        x: roadIndex === 0 ? 0 : Math.random() * 400 - 200,
+        z: roadIndex === 1 ? 0 : Math.random() * 400 - 200,
         speed: 1.5 + Math.random() * 2,
         color: Math.random() > 0.5 ? "#22d3ee" : "#f43f5e",
         roadIndex,
@@ -111,7 +143,7 @@ export function HomePage() {
         `Redis geospatial cluster check: OK`,
         `Active feedback loop training queue: processed 1 correction`,
       ];
-      setScannerLog(prev => [...prev.slice(1), msgs[Math.floor(Math.random() * msgs.length)]]);
+      setScannerLog((prev) => [...prev.slice(1), msgs[Math.floor(Math.random() * msgs.length)]]);
     }, 4500);
 
     return () => clearInterval(logInterval);
@@ -156,7 +188,7 @@ export function HomePage() {
         // Sweep camera through focus coordinates
         const issue = mockIssues[Math.floor((Date.now() / 4000) % mockIssues.length)];
         setActiveIssue(issue);
-        
+
         targetCamPos.current = {
           x: issue.x + Math.sin(time) * 120,
           y: 90 + Math.cos(time * 0.5) * 40,
@@ -256,7 +288,7 @@ export function HomePage() {
       }
 
       // Draw Traffic Particles
-      traffic.current.forEach(p => {
+      traffic.current.forEach((p) => {
         // Move particle
         if (p.roadIndex === 0) {
           p.z += p.speed * p.direction;
@@ -278,13 +310,15 @@ export function HomePage() {
       });
 
       // Sort buildings by distance (back to front depth buffer)
-      const projectedBuildings = buildings.current
-        .map(b => {
-          const proj = project(b.x, 0, b.z);
-          return { b, proj };
-        })
-        .filter(item => item.proj !== null)
-        .sort((a, b) => b.proj!.depth - a.proj!.depth);
+      const projectedBuildings = [];
+      for (let i = 0; i < buildings.current.length; i++) {
+        const b = buildings.current[i];
+        const proj = project(b.x, 0, b.z);
+        if (proj !== null) {
+          projectedBuildings.push({ b, proj });
+        }
+      }
+      projectedBuildings.sort((a, b) => b.proj.depth - a.proj.depth);
 
       // Render Buildings
       projectedBuildings.forEach(({ b }) => {
@@ -304,7 +338,7 @@ export function HomePage() {
         ];
 
         // Draw solid structure
-        if (corners.every(c => c !== null)) {
+        if (corners.every((c) => c !== null)) {
           // Base filling
           ctx.fillStyle = "rgba(15, 23, 42, 0.8)";
           ctx.beginPath();
@@ -370,7 +404,7 @@ export function HomePage() {
       });
 
       // Render Glowing Issue Beacons
-      mockIssues.forEach(issue => {
+      mockIssues.forEach((issue) => {
         const base = project(issue.x, 0, issue.z);
         if (!base) return;
 
@@ -396,7 +430,7 @@ export function HomePage() {
           const grad = ctx.createLinearGradient(base.x, base.y, top.x, top.y);
           grad.addColorStop(0, `${issue.color}bb`);
           grad.addColorStop(1, `${issue.color}00`);
-          
+
           ctx.strokeStyle = grad;
           ctx.lineWidth = base.scale * 4;
           ctx.beginPath();
@@ -441,7 +475,10 @@ export function HomePage() {
     const dy = e.clientY - dragStart.current.y;
 
     targetCamRot.current.yaw = dragStartRot.current.yaw - dx * 0.005;
-    targetCamRot.current.pitch = Math.max(-1.4, Math.min(-0.1, dragStartRot.current.pitch - dy * 0.005));
+    targetCamRot.current.pitch = Math.max(
+      -1.4,
+      Math.min(-0.1, dragStartRot.current.pitch - dy * 0.005),
+    );
   };
 
   const handleMouseUp = () => {
@@ -449,18 +486,27 @@ export function HomePage() {
   };
 
   const triggerCinematic = () => {
-    setCinematicMode(prev => !prev);
+    setCinematicMode((prev) => !prev);
   };
 
   return (
     <div className="min-h-screen bg-[#070913] text-slate-100 font-sans selection:bg-brand-500 selection:text-white overflow-x-hidden relative">
       {/* Premium Ambient Background Grid & Glowing Meshes */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#0d1127_1px,transparent_1px),linear-gradient(to_bottom,#0d1127_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-35 pointer-events-none z-0" />
-      
+
       <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden z-0">
-        <div className="absolute -top-[10%] -left-[10%] w-[60%] h-[50%] rounded-full bg-brand-900/10 blur-[130px] animate-pulse-glowing" style={{ animationDuration: "6s" }} />
-        <div className="absolute top-[30%] -right-[10%] w-[70%] h-[60%] rounded-full bg-cyan-900/10 blur-[150px] animate-pulse-glowing" style={{ animationDuration: "8s" }} />
-        <div className="absolute bottom-[10%] left-[20%] w-[50%] h-[40%] rounded-full bg-indigo-900/10 blur-[120px] animate-pulse-glowing" style={{ animationDuration: "10s" }} />
+        <div
+          className="absolute -top-[10%] -left-[10%] w-[60%] h-[50%] rounded-full bg-brand-900/10 blur-[130px] animate-pulse-glowing"
+          style={{ animationDuration: "6s" }}
+        />
+        <div
+          className="absolute top-[30%] -right-[10%] w-[70%] h-[60%] rounded-full bg-cyan-900/10 blur-[150px] animate-pulse-glowing"
+          style={{ animationDuration: "8s" }}
+        />
+        <div
+          className="absolute bottom-[10%] left-[20%] w-[50%] h-[40%] rounded-full bg-indigo-900/10 blur-[120px] animate-pulse-glowing"
+          style={{ animationDuration: "10s" }}
+        />
       </div>
 
       <div className="mx-auto max-w-7xl px-6 lg:px-8 py-20 relative z-10 grid lg:grid-cols-12 gap-12 items-center min-h-[calc(100vh-80px)]">
@@ -476,25 +522,54 @@ export function HomePage() {
 
           <div className="space-y-4">
             <h1 className="text-5xl font-extrabold tracking-tight text-white lg:text-6xl leading-[1.15] drop-shadow-lg">
-              Automated City<br />
+              Automated City
+              <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-brand-400 to-indigo-400">
                 Triage
               </span>
             </h1>
-            
+
             <div className="text-2xl font-extrabold text-white space-y-2 tracking-tight">
-              <div className="text-slate-300 font-bold">Detect. <span className="text-cyan-400">Report.</span></div>
-              <div className="text-slate-300 font-bold">Track. <span className="text-emerald-400">Resolve.</span></div>
+              <div className="text-slate-300 font-bold">
+                Detect. <span className="text-cyan-400">Report.</span>
+              </div>
+              <div className="text-slate-300 font-bold">
+                Track. <span className="text-emerald-400">Resolve.</span>
+              </div>
             </div>
           </div>
 
           {/* Slogan Keywords with custom animations */}
           <div className="grid grid-cols-4 gap-3">
             {[
-              { label: "Detect.", desc: "Computer vision", color: "text-cyan-300", icon: Target, border: "border-cyan-500/40 hover:bg-cyan-500/10" },
-              { label: "Report.", desc: "Instant upload", color: "text-brand-300", icon: Sparkles, border: "border-brand-500/40 hover:bg-brand-500/10" },
-              { label: "Track.", desc: "Live GIS Map", color: "text-indigo-300", icon: TrendingUp, border: "border-indigo-500/40 hover:bg-indigo-500/10" },
-              { label: "Resolve.", desc: "Auto SLA", color: "text-emerald-300", icon: Zap, border: "border-emerald-500/40 hover:bg-emerald-500/10" },
+              {
+                label: "Detect.",
+                desc: "Computer vision",
+                color: "text-cyan-300",
+                icon: Target,
+                border: "border-cyan-500/40 hover:bg-cyan-500/10",
+              },
+              {
+                label: "Report.",
+                desc: "Instant upload",
+                color: "text-brand-300",
+                icon: Sparkles,
+                border: "border-brand-500/40 hover:bg-brand-500/10",
+              },
+              {
+                label: "Track.",
+                desc: "Live GIS Map",
+                color: "text-indigo-300",
+                icon: TrendingUp,
+                border: "border-indigo-500/40 hover:bg-indigo-500/10",
+              },
+              {
+                label: "Resolve.",
+                desc: "Auto SLA",
+                color: "text-emerald-300",
+                icon: Zap,
+                border: "border-emerald-500/40 hover:bg-emerald-500/10",
+              },
             ].map((item) => {
               const Icon = item.icon;
               return (
@@ -502,7 +577,9 @@ export function HomePage() {
                   key={item.label}
                   className={`flex flex-col p-4 rounded-xl border border-slate-700 bg-[#0c1022]/80 backdrop-blur-md ${item.border} hover:-translate-y-1 hover:shadow-[0_8px_24px_rgba(99,102,241,0.15)] transition-all duration-300 cursor-default group`}
                 >
-                  <Icon className={`h-5 w-5 ${item.color} mb-2 group-hover:scale-110 transition-transform`} />
+                  <Icon
+                    className={`h-5 w-5 ${item.color} mb-2 group-hover:scale-110 transition-transform`}
+                  />
                   <span className={`text-xs font-bold ${item.color}`}>{item.label}</span>
                   <span className="text-[9px] text-slate-400 mt-1 font-medium">{item.desc}</span>
                 </div>
@@ -511,7 +588,8 @@ export function HomePage() {
           </div>
 
           <p className="text-base text-slate-300 leading-relaxed max-w-xl font-medium">
-            Report road damage, garbage, water leakages, streetlight failures and more using AI-powered visual analysis and real-time GIS mapping.
+            Report road damage, garbage, water leakages, streetlight failures and more using
+            AI-powered visual analysis and real-time GIS mapping.
           </p>
 
           <div className="flex flex-wrap gap-4 items-center pt-4">
@@ -579,7 +657,7 @@ export function HomePage() {
             </div>
 
             <div className="absolute top-4 right-4 pointer-events-auto z-10 flex gap-2 flex-wrap justify-end">
-              {mockIssues.map(issue => (
+              {mockIssues.map((issue) => (
                 <button
                   key={issue.id}
                   onClick={() => {
@@ -606,27 +684,43 @@ export function HomePage() {
               <div className="absolute bottom-4 left-4 right-4 p-5 rounded-xl border border-slate-700/80 bg-[#070913]/95 backdrop-blur-lg z-10 flex flex-col transition-all duration-300 shadow-2xl space-y-3 hover:bg-[#0a0e1a]/95">
                 <div className="flex items-center justify-between border-b border-slate-700/50 pb-3">
                   <span className="text-xs font-bold text-slate-200 flex items-center gap-2 uppercase tracking-wide">
-                    <ShieldAlert className="h-5 w-5 shrink-0" style={{ color: activeIssue.color }} />
+                    <ShieldAlert
+                      className="h-5 w-5 shrink-0"
+                      style={{ color: activeIssue.color }}
+                    />
                     {activeIssue.type}
                   </span>
-                  <span className="text-xs px-3 py-1 rounded-full font-extrabold font-mono bg-slate-800 text-slate-200" style={{ borderColor: activeIssue.color, borderWidth: "1px" }}>
+                  <span
+                    className="text-xs px-3 py-1 rounded-full font-extrabold font-mono bg-slate-800 text-slate-200"
+                    style={{ borderColor: activeIssue.color, borderWidth: "1px" }}
+                  >
                     {activeIssue.confidence}% CONF
                   </span>
                 </div>
                 <div className="grid grid-cols-3 gap-3 text-xs font-mono text-slate-300">
                   <div>
-                    <span className="block text-slate-500 text-[10px] font-bold uppercase mb-1">Node ID</span>
+                    <span className="block text-slate-500 text-[10px] font-bold uppercase mb-1">
+                      Node ID
+                    </span>
                     <span className="font-semibold">GIS_{(10 + parseInt(activeIssue.id)) * 3}</span>
                   </div>
                   <div>
-                    <span className="block text-slate-500 text-[10px] font-bold uppercase mb-1">Status</span>
-                    <span className={`font-bold ${activeIssue.status === "RESOLVED" ? "text-emerald-400" : activeIssue.status === "IN_PROGRESS" ? "text-cyan-400" : "text-amber-400"}`}>
+                    <span className="block text-slate-500 text-[10px] font-bold uppercase mb-1">
+                      Status
+                    </span>
+                    <span
+                      className={`font-bold ${activeIssue.status === "RESOLVED" ? "text-emerald-400" : activeIssue.status === "IN_PROGRESS" ? "text-cyan-400" : "text-amber-400"}`}
+                    >
                       {activeIssue.status}
                     </span>
                   </div>
                   <div>
-                    <span className="block text-slate-500 text-[10px] font-bold uppercase mb-1">Coords</span>
-                    <span className="font-semibold">{activeIssue.x.toFixed(1)}m, {activeIssue.z.toFixed(1)}m</span>
+                    <span className="block text-slate-500 text-[10px] font-bold uppercase mb-1">
+                      Coords
+                    </span>
+                    <span className="font-semibold">
+                      {activeIssue.x.toFixed(1)}m, {activeIssue.z.toFixed(1)}m
+                    </span>
                   </div>
                 </div>
               </div>
@@ -635,8 +729,16 @@ export function HomePage() {
             {/* Console logger output on the side for visual flavor */}
             <div className="absolute bottom-4 right-4 max-w-[220px] pointer-events-none select-none z-10 hidden sm:flex flex-col gap-1.5 p-3 rounded-lg border border-slate-800 bg-[#070913]/85 backdrop-blur-sm">
               {scannerLog.map((log, index) => (
-                <span key={index} className="text-[9px] font-mono text-slate-500 line-clamp-1 leading-relaxed">
-                  {index === scannerLog.length - 1 ? <span className="text-cyan-400">→</span> : <span className="text-slate-700">•</span>} {log}
+                <span
+                  key={index}
+                  className="text-[9px] font-mono text-slate-500 line-clamp-1 leading-relaxed"
+                >
+                  {index === scannerLog.length - 1 ? (
+                    <span className="text-cyan-400">→</span>
+                  ) : (
+                    <span className="text-slate-700">•</span>
+                  )}{" "}
+                  {log}
                 </span>
               ))}
             </div>
@@ -645,16 +747,43 @@ export function HomePage() {
           {/* Premium Operations Telemetry Stats Ticker */}
           <div className="grid grid-cols-4 gap-3 p-4 bg-gradient-to-r from-slate-900/60 to-slate-950/60 border border-slate-700/80 rounded-xl backdrop-blur-md shadow-lg">
             {[
-              { label: "Scanners", value: "42", unit: "ACTIVE", color: "text-cyan-400", icon: "📡" },
-              { label: "Avg Latency", value: "890", unit: "ms", color: "text-brand-400", icon: "⚡" },
-              { label: "Precision", value: "98.4", unit: "%", color: "text-emerald-400", icon: "✓" },
-              { label: "SLA Target", value: "92.1", unit: "%", color: "text-indigo-400", icon: "🎯" },
+              {
+                label: "Scanners",
+                value: "42",
+                unit: "ACTIVE",
+                color: "text-cyan-400",
+                icon: "📡",
+              },
+              {
+                label: "Avg Latency",
+                value: "890",
+                unit: "ms",
+                color: "text-brand-400",
+                icon: "⚡",
+              },
+              {
+                label: "Precision",
+                value: "98.4",
+                unit: "%",
+                color: "text-emerald-400",
+                icon: "✓",
+              },
+              {
+                label: "SLA Target",
+                value: "92.1",
+                unit: "%",
+                color: "text-indigo-400",
+                icon: "🎯",
+              },
             ].map((stat) => (
               <div key={stat.label} className="text-center space-y-1.5">
                 <div className="text-2xl">{stat.icon}</div>
-                <div className="text-[11px] text-slate-500 font-bold uppercase tracking-wider">{stat.label}</div>
+                <div className="text-[11px] text-slate-500 font-bold uppercase tracking-wider">
+                  {stat.label}
+                </div>
                 <div className={`text-lg font-extrabold ${stat.color} font-mono`}>
-                  {stat.value} <span className="text-xs text-slate-400 font-semibold">{stat.unit}</span>
+                  {stat.value}{" "}
+                  <span className="text-xs text-slate-400 font-semibold">{stat.unit}</span>
                 </div>
               </div>
             ))}
@@ -664,7 +793,10 @@ export function HomePage() {
 
       {/* Footer / App Details */}
       <div className="border-t border-slate-900 bg-[#070913]/60 py-8 relative z-10 text-center text-xs text-slate-500">
-        <p>© 2026 CivicVision AI Platform. Certified computer-vision detection systems. Geospatial infrastructure telemetry.</p>
+        <p>
+          © 2026 CivicVision AI Platform. Certified computer-vision detection systems. Geospatial
+          infrastructure telemetry.
+        </p>
       </div>
     </div>
   );
