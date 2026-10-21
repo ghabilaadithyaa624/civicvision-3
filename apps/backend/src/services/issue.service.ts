@@ -22,53 +22,69 @@ export class IssueService {
     if (data.imageUrl) {
       try {
         const resolvedPath = this.resolveImagePath(data.imageUrl);
-        if (resolvedPath && fs.existsSync(resolvedPath)) {
-          const fileBuffer = await fs.promises.readFile(resolvedPath);
-          const filename = path.basename(resolvedPath);
+        if (resolvedPath) {
+          let fileBuffer: Buffer | null = null;
+          try {
+            // ⚡ Bolt Performance Optimization:
+            // Replaced synchronous fs.existsSync() with a single async fs.promises.readFile() inside a try/catch.
+            // Impact: Removes event loop blocking on the main thread and reduces file system syscalls from 2 to 1,
+            // preventing TOCTOU race conditions. Expected better throughput under concurrent load.
+            fileBuffer = await fs.promises.readFile(resolvedPath);
+          } catch (err) {
+            if ((err as NodeJS.ErrnoException).code === "ENOENT") {
+              logger.warn(`Image file does not exist at resolved path: ${resolvedPath}`);
+            } else {
+              throw err;
+            }
+          }
 
-          // Build native FormData for multipart upload
-          const formData = new FormData();
-          const blob = new Blob([fileBuffer], { type: "image/jpeg" });
-          formData.append("file", blob, filename);
+          if (fileBuffer) {
+            const filename = path.basename(resolvedPath);
 
-          logger.info(`Sending image ${filename} to AI service at ${env.AI_SERVICE_URL}`);
-          const aiResponse = await fetch(`${env.AI_SERVICE_URL}/api/v1/detect`, {
-            method: "POST",
-            body: formData,
-          });
+            // Build native FormData for multipart upload
+            const formData = new FormData();
+            const blob = new Blob([fileBuffer], { type: "image/jpeg" });
+            formData.append("file", blob, filename);
 
-          if (aiResponse.ok) {
-            const result = (await aiResponse.json()) as {
-              success: boolean;
-              detections: Array<{
-                label: string;
-                confidence: number;
-              }>;
-            };
+            logger.info(`Sending image ${filename} to AI service at ${env.AI_SERVICE_URL}`);
+            const aiResponse = await fetch(`${env.AI_SERVICE_URL}/api/v1/detect`, {
+              method: "POST",
+              body: formData,
+            });
 
-            if (result.success && result.detections && result.detections.length > 0) {
-              // Find the detection with the highest confidence
-              const bestDetection = result.detections.reduce((best, current) =>
-                current.confidence > best.confidence ? current : best
-              );
+            if (aiResponse.ok) {
+              const result = (await aiResponse.json()) as {
+                success: boolean;
+                detections: Array<{
+                  label: string;
+                  confidence: number;
+                }>;
+              };
 
-              // Map label to IssueCategory
-              const mappedCategory = this.mapLabelToCategory(bestDetection.label);
-              if (mappedCategory) {
-                aiCategory = mappedCategory;
-                aiConfidence = bestDetection.confidence;
-                logger.info(
-                  `AI detection succeeded: mapped to ${aiCategory} with confidence ${aiConfidence}`
+              if (result.success && result.detections && result.detections.length > 0) {
+                // Find the detection with the highest confidence
+                const bestDetection = result.detections.reduce((best, current) =>
+                  current.confidence > best.confidence ? current : best,
                 );
+
+                // Map label to IssueCategory
+                const mappedCategory = this.mapLabelToCategory(bestDetection.label);
+                if (mappedCategory) {
+                  aiCategory = mappedCategory;
+                  aiConfidence = bestDetection.confidence;
+                  logger.info(
+                    `AI detection succeeded: mapped to ${aiCategory} with confidence ${aiConfidence}`,
+                  );
+                }
+              } else {
+                logger.info("AI service returned no detections for the image");
               }
             } else {
-              logger.info("AI service returned no detections for the image");
+              logger.warn(`AI service returned status ${aiResponse.status}`);
             }
-          } else {
-            logger.warn(`AI service returned status ${aiResponse.status}`);
           }
         } else {
-          logger.warn(`Image file does not exist at resolved path: ${resolvedPath}`);
+          logger.warn(`Invalid or unresolvable image path: ${data.imageUrl}`);
         }
       } catch (err) {
         // Graceful degradation: log error but proceed to create the issue
