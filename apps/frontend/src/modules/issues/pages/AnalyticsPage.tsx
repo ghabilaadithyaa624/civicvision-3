@@ -281,10 +281,22 @@ export function AnalyticsPage() {
 
   // Derived metrics
   const total = issues?.length || 0;
-  const resolved = issues?.filter((i) => i.status === "RESOLVED").length || 0;
-  const pending = issues?.filter((i) => i.status === "PENDING").length || 0;
-  const inProgress = issues?.filter((i) => i.status === "IN_PROGRESS").length || 0;
-  const rejected = issues?.filter((i) => i.status === "REJECTED").length || 0;
+
+  // ⚡ Bolt: Memoize array iterations to prevent massive CPU spikes during 60fps animation re-renders
+  const { resolved, pending, inProgress, rejected } = useMemo(() => {
+    let resolved = 0, pending = 0, inProgress = 0, rejected = 0;
+    if (issues) {
+      for (let i = 0; i < issues.length; i++) {
+        const status = issues[i].status;
+        if (status === "RESOLVED") resolved++;
+        else if (status === "PENDING") pending++;
+        else if (status === "IN_PROGRESS") inProgress++;
+        else if (status === "REJECTED") rejected++;
+      }
+    }
+    return { resolved, pending, inProgress, rejected };
+  }, [issues]);
+
   const resolutionRate = total > 0 ? Math.round((resolved / total) * 100) : 0;
   const avgAiConfidence = useMemo(() => {
     if (!issues?.length) return 96.4;
