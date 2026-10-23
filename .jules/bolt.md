@@ -1,1 +1,5 @@
 - Event loop blocking from synchronous `fs` methods (like `fs.existsSync` or `fs.writeFileSync`) in Node.js backend services can be optimized by replacing them with their asynchronous equivalents (`fs.promises.access`, `fs.promises.writeFile`). In high-concurrency environments, using a shared promise (`initPromise`) is an effective pattern to prevent race conditions during asynchronous initialization without duplicating operations.
+
+## 2026-10-23 - Memoizing Expensive Computations in Animated Components
+**Learning:** React components using `requestAnimationFrame` for animations (like number counters) re-render at up to 60fps. Any heavy computations or un-memoized array iterations (e.g., multiple `.filter()` calls) placed at the component's top level will execute on every frame, causing massive CPU spikes and degrading performance.
+**Action:** Wrap any heavy computations or array iterations at the top level of animated components in a `useMemo` hook and consolidate multiple passes into a single-pass loop to ensure calculations are only performed when the source dependencies change, not on every animation frame.
