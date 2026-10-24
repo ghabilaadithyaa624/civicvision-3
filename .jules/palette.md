@@ -1,0 +1,3 @@
+## 2026-10-24 - Input Field Error Accessibility with Spread Props
+**Learning:** When creating reusable form components that spread `{...rest}` props, explicitly defined accessibility attributes (like `aria-describedby` or `aria-invalid`) can be accidentally overwritten by parent props. Furthermore, error messages must be programmatically linked to inputs using `aria-describedby` so screen readers announce them.
+**Action:** Destructure necessary ARIA props, merge them with internal states (e.g., `[ariaDescribedBy, errorId].filter(Boolean).join(' ')`), and place `{...rest}` before explicit attributes to guarantee accessibility bindings are preserved.
