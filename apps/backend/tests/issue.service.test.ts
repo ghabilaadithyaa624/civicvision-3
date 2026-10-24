@@ -194,3 +194,33 @@ describe("IssueService.deleteIssue", () => {
     await expect(service.deleteIssue("does-not-exist")).rejects.toThrow(AppError);
   });
 });
+
+describe("IssueService.resolveImagePath Security", () => {
+  it("rejects path traversal attempts", async () => {
+    const { service } = buildService();
+    // Use an invalid image path with traversal.
+    // The service gracefully ignores it and does not throw, but leaves aiConfidence null.
+    const issue = await service.createIssue({
+      title: "Security Test",
+      category: "OTHER",
+      latitude: 1,
+      longitude: 1,
+      imageUrl: "/uploads/../../etc/passwd",
+      reportedById: "user-1",
+    });
+    expect(issue.aiConfidence).toBeNull();
+  });
+
+  it("rejects absolute paths", async () => {
+    const { service } = buildService();
+    const issue = await service.createIssue({
+      title: "Security Test 2",
+      category: "OTHER",
+      latitude: 1,
+      longitude: 1,
+      imageUrl: "/etc/passwd",
+      reportedById: "user-1",
+    });
+    expect(issue.aiConfidence).toBeNull();
+  });
+});
