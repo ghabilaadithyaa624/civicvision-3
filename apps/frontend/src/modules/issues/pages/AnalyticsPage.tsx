@@ -280,11 +280,26 @@ export function AnalyticsPage() {
   const [timeRange, setTimeRange] = useState<"7d" | "30d" | "90d">("7d");
 
   // Derived metrics
-  const total = issues?.length || 0;
-  const resolved = issues?.filter((i) => i.status === "RESOLVED").length || 0;
-  const pending = issues?.filter((i) => i.status === "PENDING").length || 0;
-  const inProgress = issues?.filter((i) => i.status === "IN_PROGRESS").length || 0;
-  const rejected = issues?.filter((i) => i.status === "REJECTED").length || 0;
+  // ⚡ Bolt Optimization: Consolidated multiple array .filter() iterations into a single O(N) pass.
+  // Wrapped in useMemo to prevent CPU spikes during the 60fps requestAnimationFrame render cycle.
+  const { total, resolved, pending, inProgress, rejected } = useMemo(() => {
+    let resolvedCount = 0, pendingCount = 0, inProgressCount = 0, rejectedCount = 0;
+    if (issues) {
+      for (const issue of issues) {
+        if (issue.status === "RESOLVED") resolvedCount++;
+        else if (issue.status === "PENDING") pendingCount++;
+        else if (issue.status === "IN_PROGRESS") inProgressCount++;
+        else if (issue.status === "REJECTED") rejectedCount++;
+      }
+    }
+    return {
+      total: issues?.length || 0,
+      resolved: resolvedCount,
+      pending: pendingCount,
+      inProgress: inProgressCount,
+      rejected: rejectedCount
+    };
+  }, [issues]);
   const resolutionRate = total > 0 ? Math.round((resolved / total) * 100) : 0;
   const avgAiConfidence = useMemo(() => {
     if (!issues?.length) return 96.4;
