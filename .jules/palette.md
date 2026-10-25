@@ -1,0 +1,3 @@
+## 2026-10-25 - InputField Accessibility Validation
+**Learning:** Screen readers cannot automatically associate error messages with their corresponding input fields. Additionally, when shared React components merge props using `{...rest}`, placing `{...rest}` after explicit ARIA attributes like `aria-invalid` or `aria-describedby` can allow parent components to overwrite these critical accessibility states.
+**Action:** When creating shared form components, always generate an ID for the error message, explicitly destructure `aria-describedby` to merge it with the error ID, and place `{...rest}` BEFORE the explicit final ARIA attributes in the JSX to prevent overrides.
