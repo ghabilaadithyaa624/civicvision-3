@@ -22,8 +22,21 @@ export class IssueService {
     if (data.imageUrl) {
       try {
         const resolvedPath = this.resolveImagePath(data.imageUrl);
-        if (resolvedPath && fs.existsSync(resolvedPath)) {
-          const fileBuffer = await fs.promises.readFile(resolvedPath);
+        let fileBuffer: Buffer | undefined;
+
+        if (resolvedPath) {
+          try {
+            // ⚡ Bolt: Removed synchronous fs.existsSync to prevent event loop blocking.
+            // Catching ENOENT on readFile is faster and avoids TOCTOU race conditions.
+            fileBuffer = await fs.promises.readFile(resolvedPath);
+          } catch (err) {
+            if ((err as NodeJS.ErrnoException).code !== "ENOENT") {
+              throw err;
+            }
+          }
+        }
+
+        if (fileBuffer && resolvedPath) {
           const filename = path.basename(resolvedPath);
 
           // Build native FormData for multipart upload
