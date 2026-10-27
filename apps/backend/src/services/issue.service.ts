@@ -22,9 +22,20 @@ export class IssueService {
     if (data.imageUrl) {
       try {
         const resolvedPath = this.resolveImagePath(data.imageUrl);
-        if (resolvedPath && fs.existsSync(resolvedPath)) {
-          const fileBuffer = await fs.promises.readFile(resolvedPath);
-          const filename = path.basename(resolvedPath);
+        if (resolvedPath) {
+          let fileBuffer: Buffer | null = null;
+          try {
+            fileBuffer = await fs.promises.readFile(resolvedPath);
+          } catch (err: unknown) {
+            if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
+              logger.warn(`Image file does not exist at resolved path: ${resolvedPath}`);
+            } else {
+              throw err;
+            }
+          }
+
+          if (fileBuffer) {
+            const filename = path.basename(resolvedPath);
 
           // Build native FormData for multipart upload
           const formData = new FormData();
@@ -67,8 +78,7 @@ export class IssueService {
           } else {
             logger.warn(`AI service returned status ${aiResponse.status}`);
           }
-        } else {
-          logger.warn(`Image file does not exist at resolved path: ${resolvedPath}`);
+        }
         }
       } catch (err) {
         // Graceful degradation: log error but proceed to create the issue
@@ -112,14 +122,18 @@ export class IssueService {
   }
 
   private resolveImagePath(imageUrl: string): string | null {
-    // If it's a relative uploads path e.g. /uploads/abc.jpg
+    // Prevent path traversal by securely resolving and validating the path
     if (imageUrl.startsWith("/uploads/")) {
-      return path.join(__dirname, "../../../public", imageUrl);
+      const publicDir = path.resolve(__dirname, "../../../public");
+      const resolvedPath = path.resolve(publicDir, "." + imageUrl);
+
+      // Ensure the resolved path remains strictly within the uploads directory
+      if (resolvedPath.startsWith(path.join(publicDir, "uploads") + path.sep)) {
+        return resolvedPath;
+      }
     }
-    // If it's an absolute path
-    if (path.isAbsolute(imageUrl)) {
-      return imageUrl;
-    }
+
+    // Arbitrary absolute paths are not permitted for security
     return null;
   }
 
