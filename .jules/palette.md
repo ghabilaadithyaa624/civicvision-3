@@ -1,0 +1,3 @@
+## 2026-10-29 - Fix InputField aria-describedby overriding and error association
+**Learning:** When using `{...rest}` on inputs that map error states to UI elements (like a dynamic error message), explicit accessibility attributes such as `aria-invalid` and `aria-describedby` must be destructured, merged with internal states (e.g. associating the error message's ID), and placed AFTER `{...rest}` to prevent a parent component from accidentally overwriting critical accessibility bindings.
+**Action:** When creating form field wrappers with error messages, extract `aria-describedby` from props, append the generated error message ID to it, and bind it explicitly after the spread props.
