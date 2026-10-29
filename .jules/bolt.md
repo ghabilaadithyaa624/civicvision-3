@@ -1,1 +1,4 @@
 - Event loop blocking from synchronous `fs` methods (like `fs.existsSync` or `fs.writeFileSync`) in Node.js backend services can be optimized by replacing them with their asynchronous equivalents (`fs.promises.access`, `fs.promises.writeFile`). In high-concurrency environments, using a shared promise (`initPromise`) is an effective pattern to prevent race conditions during asynchronous initialization without duplicating operations.
+## 2026-10-29 - Replaced blocking fs.existsSync with async try/catch
+**Learning:** Synchronous file system checks like `fs.existsSync` block the event loop in Node.js, negatively impacting high-concurrency performance.
+**Action:** When validating file existence before reading, combine the check by wrapping the asynchronous `fs.promises.readFile` in a `try/catch` and handling the `ENOENT` error.
