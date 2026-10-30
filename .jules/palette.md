@@ -1,0 +1,3 @@
+## 2026-10-30 - Merging ARIA attributes with rest props
+**Learning:** When adding ARIA attributes (like aria-describedby or aria-invalid) to shared components that also accept `{...rest}` props, you must destructure the explicit ARIA prop (e.g., `"aria-describedby": ariaDescribedBy`), merge it with internal state (e.g., `[ariaDescribedBy, errorId].filter(Boolean).join(' ') || undefined`), and place `{...rest}` BEFORE the explicit attributes on the DOM element. Otherwise, parent components can accidentally overwrite the component's internal accessibility bindings.
+**Action:** Always destructure, merge, and order `{...rest}` props before explicit ARIA attributes in shared UI primitives.
