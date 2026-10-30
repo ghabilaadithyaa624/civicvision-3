@@ -22,8 +22,21 @@ export class IssueService {
     if (data.imageUrl) {
       try {
         const resolvedPath = this.resolveImagePath(data.imageUrl);
-        if (resolvedPath && fs.existsSync(resolvedPath)) {
-          const fileBuffer = await fs.promises.readFile(resolvedPath);
+        let fileBuffer: Buffer | null = null;
+
+        if (resolvedPath) {
+          try {
+            // Optimized: Removed synchronous fs.existsSync and combined with readFile
+            // Expected impact: Prevents event loop blocking and TOCTOU race conditions
+            fileBuffer = await fs.promises.readFile(resolvedPath);
+          } catch (readErr) {
+            if ((readErr as NodeJS.ErrnoException).code !== 'ENOENT') {
+              throw readErr;
+            }
+          }
+        }
+
+        if (fileBuffer && resolvedPath) {
           const filename = path.basename(resolvedPath);
 
           // Build native FormData for multipart upload
