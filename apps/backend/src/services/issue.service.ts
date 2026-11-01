@@ -114,11 +114,14 @@ export class IssueService {
   private resolveImagePath(imageUrl: string): string | null {
     // If it's a relative uploads path e.g. /uploads/abc.jpg
     if (imageUrl.startsWith("/uploads/")) {
-      return path.join(__dirname, "../../../public", imageUrl);
-    }
-    // If it's an absolute path
-    if (path.isAbsolute(imageUrl)) {
-      return imageUrl;
+      const publicDir = path.join(__dirname, "../../../public");
+      const resolved = path.join(publicDir, imageUrl);
+
+      // Sentinel Security Fix: Prevent path traversal by ensuring the resolved path
+      // strictly remains within the public directory.
+      if (resolved.startsWith(publicDir + path.sep)) {
+        return resolved;
+      }
     }
     return null;
   }
