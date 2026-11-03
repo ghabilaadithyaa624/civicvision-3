@@ -114,11 +114,15 @@ export class IssueService {
   private resolveImagePath(imageUrl: string): string | null {
     // If it's a relative uploads path e.g. /uploads/abc.jpg
     if (imageUrl.startsWith("/uploads/")) {
-      return path.join(__dirname, "../../../public", imageUrl);
-    }
-    // If it's an absolute path
-    if (path.isAbsolute(imageUrl)) {
-      return imageUrl;
+      const basePath = path.join(__dirname, "../../../public");
+      const resolvedPath = path.join(basePath, imageUrl);
+
+      // Security: Prevent path traversal by ensuring the resolved path is strictly within the base directory
+      const relative = path.relative(basePath, resolvedPath);
+      if (relative.startsWith("..") || path.isAbsolute(relative)) {
+        return null;
+      }
+      return resolvedPath;
     }
     return null;
   }
