@@ -122,17 +122,20 @@ export function ObservabilityPage() {
   }, []);
 
   const filteredLogs = useMemo(() => {
-    return logs
-      .filter((log) => filter === "ALL" || log.category === filter)
-      .filter((log) => {
-        if (!searchQuery) return true;
-        const q = searchQuery.toLowerCase();
-        return (
-          log.message.toLowerCase().includes(q) ||
-          log.user.toLowerCase().includes(q) ||
-          log.category.toLowerCase().includes(q)
-        );
-      });
+    // ⚡ Bolt: Pre-computed lowercase search query outside the loop to prevent O(N) redundant allocations
+    // ⚡ Bolt: Consolidated two array filters into a single pass to reduce iteration overhead
+    const q = searchQuery ? searchQuery.toLowerCase() : "";
+    const isAll = filter === "ALL";
+
+    return logs.filter((log) => {
+      if (!isAll && log.category !== filter) return false;
+      if (!q) return true;
+      return (
+        log.message.toLowerCase().includes(q) ||
+        log.user.toLowerCase().includes(q) ||
+        log.category.toLowerCase().includes(q)
+      );
+    });
   }, [logs, filter, searchQuery]);
 
   return (
