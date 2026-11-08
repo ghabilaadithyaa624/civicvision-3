@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useMemo } from "react";
 import { LayoutDashboard, Plus, List, TrendingUp, Compass, Sparkles, Camera } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAppSelector } from "@/store/hooks";
@@ -28,9 +28,17 @@ export function DashboardPage() {
   );
 
   const totalCount = issues?.length ?? 0;
-  const pendingCount = issues?.filter((i) => i.status === "PENDING").length ?? 0;
-  const progressCount = issues?.filter((i) => i.status === "IN_PROGRESS").length ?? 0;
-  const resolvedCount = issues?.filter((i) => i.status === "RESOLVED").length ?? 0;
+  // Wrapped in useMemo and consolidated array iterations to prevent multiple O(N) passes and CPU spikes on re-render.
+  const { pendingCount, progressCount, resolvedCount } = useMemo(() => {
+    if (!issues) return { pendingCount: 0, progressCount: 0, resolvedCount: 0 };
+    let pending = 0, progress = 0, resolved = 0;
+    for (let i = 0; i < issues.length; i++) {
+      if (issues[i].status === "PENDING") pending++;
+      else if (issues[i].status === "IN_PROGRESS") progress++;
+      else if (issues[i].status === "RESOLVED") resolved++;
+    }
+    return { pendingCount: pending, progressCount: progress, resolvedCount: resolved };
+  }, [issues]);
 
   const recentIssues = issues?.slice(0, 3) ?? [];
 
