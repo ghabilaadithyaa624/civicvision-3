@@ -112,13 +112,15 @@ export class IssueService {
   }
 
   private resolveImagePath(imageUrl: string): string | null {
-    // If it's a relative uploads path e.g. /uploads/abc.jpg
+    // SECURITY: Prevent Path Traversal (LFI/SSRF) by enforcing directory boundaries
     if (imageUrl.startsWith("/uploads/")) {
-      return path.join(__dirname, "../../../public", imageUrl);
-    }
-    // If it's an absolute path
-    if (path.isAbsolute(imageUrl)) {
-      return imageUrl;
+      const publicDir = path.resolve(__dirname, "../../../public");
+      const resolvedPath = path.resolve(publicDir, "." + imageUrl);
+
+      // Ensure the resolved path remains within the intended public directory
+      if (resolvedPath.startsWith(publicDir + path.sep)) {
+        return resolvedPath;
+      }
     }
     return null;
   }
