@@ -181,16 +181,20 @@ export function HomePage() {
       camRot.current.yaw += (targetCamRot.current.yaw - camRot.current.yaw) * 0.05;
       camRot.current.pitch += (targetCamRot.current.pitch - camRot.current.pitch) * 0.05;
 
-      // Projection Math
-      const project = (x: number, y: number, z: number) => {
-        const dx = x - camPos.current.x;
-        const dy = y - camPos.current.y;
-        const dz = z - camPos.current.z;
+      // Projection Math (Optimized: Hoisted sine/cosine calculations)
+      // We calculate trig functions once per frame instead of per vertex/particle
+      const cosYaw = Math.cos(camRot.current.yaw);
+      const sinYaw = Math.sin(camRot.current.yaw);
+      const cosPitch = Math.cos(camRot.current.pitch);
+      const sinPitch = Math.sin(camRot.current.pitch);
+      const camX = camPos.current.x;
+      const camY = camPos.current.y;
+      const camZ = camPos.current.z;
 
-        const cosYaw = Math.cos(camRot.current.yaw);
-        const sinYaw = Math.sin(camRot.current.yaw);
-        const cosPitch = Math.cos(camRot.current.pitch);
-        const sinPitch = Math.sin(camRot.current.pitch);
+      const project = (x: number, y: number, z: number) => {
+        const dx = x - camX;
+        const dy = y - camY;
+        const dz = z - camZ;
 
         const rx = dx * cosYaw - dz * sinYaw;
         const rz = dx * sinYaw + dz * cosYaw;
