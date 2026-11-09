@@ -114,12 +114,17 @@ export class IssueService {
   private resolveImagePath(imageUrl: string): string | null {
     // If it's a relative uploads path e.g. /uploads/abc.jpg
     if (imageUrl.startsWith("/uploads/")) {
-      return path.join(__dirname, "../../../public", imageUrl);
+      const baseDir = path.join(__dirname, "../../../public");
+      const resolvedPath = path.join(baseDir, imageUrl);
+      // Security: Enforce directory boundary to prevent path traversal
+      const relative = path.relative(baseDir, resolvedPath);
+      if (relative.startsWith("..") || path.isAbsolute(relative)) {
+        return null;
+      }
+      return resolvedPath;
     }
-    // If it's an absolute path
-    if (path.isAbsolute(imageUrl)) {
-      return imageUrl;
-    }
+    // Absolute paths without any checks enable LFI.
+    // Disallow resolving arbitrary absolute paths.
     return null;
   }
 
