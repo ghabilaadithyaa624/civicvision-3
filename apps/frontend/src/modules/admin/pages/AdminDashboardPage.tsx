@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Users,
   Shield,
@@ -30,27 +30,42 @@ export function AdminDashboardPage() {
   const [activeTab, setActiveTab] = useState<"users" | "issues">("users");
 
   // Statistics
-  const totalUsers = users?.length || 0;
-  const totalCitizens = users?.filter((u) => u.role === "CITIZEN").length || 0;
-  const totalAgents = users?.filter((u) => u.role === "FIELD_AGENT").length || 0;
-  const totalAdmins = users?.filter((u) => u.role === "ADMIN").length || 0;
+  // Wrapped in useMemo and consolidated iteration to prevent CPU spikes and redundant loops
+  const { totalCitizens, totalAgents, totalAdmins } = useMemo(() => {
+    let cit = 0, ag = 0, adm = 0;
+    users?.forEach((u) => {
+      if (u.role === "CITIZEN") cit++;
+      else if (u.role === "FIELD_AGENT") ag++;
+      else if (u.role === "ADMIN") adm++;
+    });
+    return { totalCitizens: cit, totalAgents: ag, totalAdmins: adm };
+  }, [users]);
 
+  const totalUsers = users?.length || 0;
   const totalIssues = issues?.length || 0;
 
-  // Filtered lists
-  const filteredUsers = users?.filter(
-    (u) =>
-      u.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      u.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      u.role.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Filtered lists wrapped in useMemo to prevent CPU spikes on every render
+  const filteredUsers = useMemo(() => {
+    if (!searchQuery) return users;
+    const q = searchQuery.toLowerCase();
+    return users?.filter(
+      (u) =>
+        u.fullName.toLowerCase().includes(q) ||
+        u.email.toLowerCase().includes(q) ||
+        u.role.toLowerCase().includes(q)
+    );
+  }, [users, searchQuery]);
 
-  const filteredIssues = issues?.filter(
-    (i) =>
-      i.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      i.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      i.status.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredIssues = useMemo(() => {
+    if (!searchQuery) return issues;
+    const q = searchQuery.toLowerCase();
+    return issues?.filter(
+      (i) =>
+        i.title.toLowerCase().includes(q) ||
+        i.category.toLowerCase().includes(q) ||
+        i.status.toLowerCase().includes(q)
+    );
+  }, [issues, searchQuery]);
 
   const handleRoleChange = (userId: string, newRole: UserRole) => {
     updateRoleMutation.mutate({ id: userId, role: newRole });
