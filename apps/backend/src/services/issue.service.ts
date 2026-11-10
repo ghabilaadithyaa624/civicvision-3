@@ -112,15 +112,24 @@ export class IssueService {
   }
 
   private resolveImagePath(imageUrl: string): string | null {
-    // If it's a relative uploads path e.g. /uploads/abc.jpg
-    if (imageUrl.startsWith("/uploads/")) {
-      return path.join(__dirname, "../../../public", imageUrl);
+    // 🛡️ Sentinel: Fix path traversal and LFI by restricting image resolution to the uploads directory
+    if (!imageUrl || typeof imageUrl !== 'string') return null;
+
+    if (!imageUrl.startsWith("/uploads/")) {
+      return null;
     }
-    // If it's an absolute path
-    if (path.isAbsolute(imageUrl)) {
-      return imageUrl;
+
+    const baseDir = path.join(__dirname, "../../../public/uploads");
+    const filename = imageUrl.slice("/uploads/".length);
+    const resolvedPath = path.join(baseDir, filename);
+
+    // Ensure the resolved path remains strictly within the baseDir to prevent directory traversal
+    const relative = path.relative(baseDir, resolvedPath);
+    if (relative.startsWith("..") || path.isAbsolute(relative)) {
+      return null;
     }
-    return null;
+
+    return resolvedPath;
   }
 
   private mapLabelToCategory(label: string): IssueCategory | null {
