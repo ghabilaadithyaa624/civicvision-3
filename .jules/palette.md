@@ -1,0 +1,3 @@
+## 2026-11-11 - InputField Accessibility: Linking Error Messages to Inputs
+**Learning:** Found that form input fields in the shared-ui package rendered error messages visually but lacked programmatic association. Screen readers wouldn't announce the error text when the input gained focus.
+**Action:** Added an ID to the error message paragraph and linked it to the input field using `aria-describedby`. Destructured `aria-describedby` and `aria-invalid` from props, merged them with internal state, and placed `{...rest}` BEFORE the final bound ARIA attributes to ensure they take precedence and prevent parent overrides.
